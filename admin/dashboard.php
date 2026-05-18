@@ -1,6 +1,7 @@
 <?php
+// admin/dashboard.php - Admin Dashboard with new design
 require_once '../config/database.php';
-require_once '../includes/SessionManager.php'; // Changed from session.php to SessionManager.php
+require_once '../includes/SessionManager.php';
 
 // Start session if not already started
 SessionManager::startSession();
@@ -63,7 +64,8 @@ $recent_activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Hospital System</title>
-    <link rel="stylesheet" href="../assets/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
@@ -78,9 +80,10 @@ $recent_activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
             min-height: 100vh;
         }
 
+        /* Navbar Styles */
         .navbar {
             background: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
             padding: 1rem 0;
             position: sticky;
             top: 0;
@@ -88,7 +91,7 @@ $recent_activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
         .navbar-container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 0 2rem;
             display: flex;
@@ -99,8 +102,14 @@ $recent_activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
         .logo {
             font-size: 1.5rem;
             font-weight: 700;
-            color: var(--primary-color);
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
             text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .nav-menu {
@@ -111,72 +120,123 @@ $recent_activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         .nav-link {
             text-decoration: none;
-            color: var(--gray-700);
+            color: #374151;
             font-weight: 500;
-            transition: color 0.3s;
+            transition: all 0.3s;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
         }
 
         .nav-link:hover {
-            color: var(--primary-color);
+            color: #2563eb;
+            background: #eff6ff;
         }
 
-        .glass-container {
-            max-width: 1200px;
+        .nav-link.active {
+            color: #2563eb;
+            background: #eff6ff;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
             margin: 2rem auto;
-            padding: 2rem;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 16px;
-            box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.1);
+            padding: 0 2rem;
         }
 
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        /* Page Header */
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .page-header h2 {
+            font-size: 1.875rem;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            color: #6b7280;
+        }
+
+        /* Stats Grid */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 1.5rem;
-            margin: 2rem 0;
+            margin-bottom: 2rem;
         }
 
         .stat-card {
             background: white;
             padding: 1.5rem;
-            border-radius: 12px;
-            text-align: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transition: transform 0.3s;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: all 0.3s;
+            border: 1px solid #e5e7eb;
         }
 
         .stat-card:hover {
             transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .stat-icon {
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
         }
 
         .stat-number {
             font-size: 2rem;
             font-weight: 700;
-            color: var(--primary-color);
+            color: #2563eb;
+            line-height: 1;
         }
 
         .stat-label {
-            color: var(--gray-600);
+            color: #6b7280;
             margin-top: 0.5rem;
             font-size: 0.875rem;
+            font-weight: 500;
         }
 
+        /* Card Styles */
         .card {
             background: white;
-            border-radius: 12px;
+            border-radius: 16px;
             padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 1px solid #e5e7eb;
         }
 
         .card-header {
             font-size: 1.25rem;
             font-weight: 600;
             margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 2px solid var(--gray-200);
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
+        /* Grid Layout */
+        .grid-2cols {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        /* Table Styles */
         .table-container {
             overflow-x: auto;
         }
@@ -188,35 +248,49 @@ $recent_activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         .data-table th,
         .data-table td {
-            padding: 0.75rem;
+            padding: 0.875rem;
             text-align: left;
-            border-bottom: 1px solid var(--gray-200);
+            border-bottom: 1px solid #e5e7eb;
         }
 
         .data-table th {
-            background: var(--gray-50);
+            background: #f9fafb;
             font-weight: 600;
+            color: #374151;
+            font-size: 0.875rem;
         }
 
-        .grid-2cols {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 2rem;
-            margin: 2rem 0;
+        .data-table tr:hover {
+            background: #f9fafb;
         }
 
-        :root {
-            --primary-color: #2563eb;
-            --secondary-color: #3b82f6;
-            --gray-50: #f9fafb;
-            --gray-100: #f3f4f6;
-            --gray-200: #e5e7eb;
-            --gray-300: #d1d5db;
-            --gray-500: #6b7280;
-            --gray-600: #4b5563;
-            --gray-700: #374151;
+        /* Badge Styles */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            gap: 0.375rem;
         }
 
+        .badge-admin {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-doctor {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-patient {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        /* Animations */
         .fade-in {
             animation: fadeIn 0.5s ease-in;
         }
@@ -226,6 +300,7 @@ $recent_activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
             to { opacity: 1; transform: translateY(0); }
         }
 
+        /* Responsive */
         @media (max-width: 768px) {
             .navbar-container {
                 flex-direction: column;
@@ -235,20 +310,30 @@ $recent_activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
             .nav-menu {
                 flex-wrap: wrap;
                 justify-content: center;
-                gap: 1rem;
+                gap: 0.5rem;
             }
             
-            .glass-container {
-                margin: 1rem;
+            .container {
+                padding: 0 1rem;
+            }
+            
+            .glass-card {
                 padding: 1rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
             }
             
             .grid-2cols {
                 grid-template-columns: 1fr;
             }
             
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
+            .data-table th,
+            .data-table td {
+                padding: 0.75rem 0.5rem;
+                font-size: 0.75rem;
             }
         }
     </style>
@@ -256,81 +341,128 @@ $recent_activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <body>
     <nav class="navbar">
         <div class="navbar-container">
-            <a href="dashboard.php" class="logo">🏥 Hospital System - Admin</a>
+            <a href="dashboard.php" class="logo">
+                <i class="fas fa-hospital"></i>
+                <span>Hospital System - Admin</span>
+            </a>
             <ul class="nav-menu">
-                <li><a href="dashboard.php" class="nav-link">Dashboard</a></li>
-                <li><a href="manage-users.php" class="nav-link">Manage Users</a></li>
-                <li><a href="manage-appointments.php" class="nav-link">Appointments</a></li>
-                <li><a href="manage-doctors.php" class="nav-link">Doctors</a></li>
-                <li><a href="system-settings.php" class="nav-link">Settings</a></li>
-                <li><a href="../logout.php" class="nav-link">Logout</a></li>
+                <li><a href="dashboard.php" class="nav-link active"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                <li><a href="manage-users.php" class="nav-link"><i class="fas fa-users"></i> Manage Users</a></li>
+                <li><a href="manage-appointments.php" class="nav-link"><i class="fas fa-calendar-check"></i> Appointments</a></li>
+                <li><a href="manage-doctors.php" class="nav-link"><i class="fas fa-user-md"></i> Doctors</a></li>
+                <li><a href="system-settings.php" class="nav-link"><i class="fas fa-cog"></i> Settings</a></li>
+                <li><a href="../logout.php" class="nav-link"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
         </div>
     </nav>
-    
-    <div class="glass-container fade-in">
-        <h2>Admin Dashboard</h2>
-        <p style="color: var(--gray-600); margin-top: 0.5rem;">Welcome, <?php echo htmlspecialchars(SessionManager::getFullName()); ?>!</p>
-        
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-number"><?php echo $stats['total_users']; ?></div>
-                <div class="stat-label">Total Users</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number"><?php echo $stats['total_doctors']; ?></div>
-                <div class="stat-label">Doctors</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number"><?php echo $stats['total_patients']; ?></div>
-                <div class="stat-label">Patients</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number"><?php echo $stats['total_appointments']; ?></div>
-                <div class="stat-label">Total Appointments</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number"><?php echo $stats['today_appointments']; ?></div>
-                <div class="stat-label">Today's Appointments</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number"><?php echo $stats['pending_appointments']; ?></div>
-                <div class="stat-label">Pending</div>
-            </div>
-        </div>
-        
-        <div class="grid-2cols">
-            <div class="card">
-                <div class="card-header">📊 Appointment Statistics</div>
-                <canvas id="appointmentChart" style="max-height: 300px;"></canvas>
+
+    <div class="container">
+        <div class="glass-card fade-in">
+            <div class="page-header">
+                <h2><i class="fas fa-tachometer-alt"></i> Admin Dashboard</h2>
+                <p>Welcome back, <?php echo htmlspecialchars(SessionManager::getFullName()); ?>! Here's what's happening in your hospital today.</p>
             </div>
             
-            <div class="card">
-                <div class="card-header">🔄 Recent Activities</div>
-                <?php if (count($recent_activities) > 0): ?>
-                    <div class="table-container">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>User</th>
-                                    <th>Action</th>
-                                    <th>Time</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($recent_activities as $activity): ?>
-                                <tr>
-                                    <td><?php echo htmlspecialchars($activity['full_name']); ?> <small>(<?php echo $activity['role']; ?>)</small></td>
-                                    <td><?php echo htmlspecialchars($activity['action']); ?></td>
-                                    <td><?php echo date('M d, H:i', strtotime($activity['created_at'])); ?></span>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
+            <!-- Statistics Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-users"></i></div>
+                    <div class="stat-number"><?php echo $stats['total_users']; ?></div>
+                    <div class="stat-label">Total Users</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-user-md"></i></div>
+                    <div class="stat-number"><?php echo $stats['total_doctors']; ?></div>
+                    <div class="stat-label">Doctors</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-user"></i></div>
+                    <div class="stat-number"><?php echo $stats['total_patients']; ?></div>
+                    <div class="stat-label">Patients</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-calendar-check"></i></div>
+                    <div class="stat-number"><?php echo $stats['total_appointments']; ?></div>
+                    <div class="stat-label">Total Appointments</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-calendar-day"></i></div>
+                    <div class="stat-number"><?php echo $stats['today_appointments']; ?></div>
+                    <div class="stat-label">Today's Appointments</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                    <div class="stat-number"><?php echo $stats['pending_appointments']; ?></div>
+                    <div class="stat-label">Pending</div>
+                </div>
+            </div>
+            
+            <!-- Charts and Recent Activities -->
+            <div class="grid-2cols">
+                <!-- Appointment Chart -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-chart-bar" style="color: #2563eb;"></i>
+                        Appointment Statistics
                     </div>
-                <?php else: ?>
-                    <p style="text-align: center; color: var(--gray-500);">No recent activities found.</p>
-                <?php endif; ?>
+                    <canvas id="appointmentChart" style="max-height: 300px; width: 100%;"></canvas>
+                </div>
+                
+                <!-- Recent Activities -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-history" style="color: #2563eb;"></i>
+                        Recent Activities
+                    </div>
+                    <?php if (count($recent_activities) > 0): ?>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th><i class="fas fa-user"></i> User</th>
+                                        <th><i class="fas fa-bolt"></i> Action</th>
+                                        <th><i class="fas fa-clock"></i> Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($recent_activities as $activity): ?>
+                                    <tr>
+                                        <td>
+                                            <strong><?php echo htmlspecialchars($activity['full_name']); ?></strong>
+                                            <br>
+                                            <span class="badge badge-<?php echo $activity['role']; ?>">
+                                                <i class="fas <?php echo $activity['role'] == 'admin' ? 'fa-user-shield' : ($activity['role'] == 'doctor' ? 'fa-user-md' : 'fa-user'); ?>"></i>
+                                                <?php echo ucfirst($activity['role']); ?>
+                                            </span>
+                                         </td>
+                                        <td><?php echo htmlspecialchars($activity['action']); ?></td>
+                                        <td><?php echo date('M d, H:i', strtotime($activity['created_at'])); ?></td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php else: ?>
+                        <p style="text-align: center; color: #6b7280; padding: 2rem;">
+                            <i class="fas fa-inbox" style="font-size: 3rem; color: #d1d5db; margin-bottom: 1rem; display: block;"></i>
+                            No recent activities found.
+                        </p>
+                    <?php endif; ?>
+                </div>
+            </div>
+            
+            <!-- Quick Stats Footer -->
+            <div class="stats-grid" style="margin-top: 1rem;">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                    <div class="stat-number"><?php echo $stats['completed_appointments'] ?? 0; ?></div>
+                    <div class="stat-label">Completed Appointments</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+                    <div class="stat-number"><?php echo round(($stats['completed_appointments'] / max($stats['total_appointments'], 1)) * 100); ?>%</div>
+                    <div class="stat-label">Completion Rate</div>
+                </div>
             </div>
         </div>
     </div>
@@ -351,10 +483,10 @@ $recent_activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <?php echo $stats['completed_appointments'] ?? 0; ?>
                 ],
                 backgroundColor: [
-                    'rgba(37, 99, 235, 0.5)',
-                    'rgba(59, 130, 246, 0.5)',
-                    'rgba(245, 158, 11, 0.5)',
-                    'rgba(16, 185, 129, 0.5)'
+                    'rgba(37, 99, 235, 0.7)',
+                    'rgba(59, 130, 246, 0.7)',
+                    'rgba(245, 158, 11, 0.7)',
+                    'rgba(16, 185, 129, 0.7)'
                 ],
                 borderColor: [
                     'rgba(37, 99, 235, 1)',
@@ -362,28 +494,48 @@ $recent_activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     'rgba(245, 158, 11, 1)',
                     'rgba(16, 185, 129, 1)'
                 ],
-                borderWidth: 1
+                borderWidth: 2,
+                borderRadius: 8
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: true,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        stepSize: 1
-                    }
-                }
-            },
             plugins: {
                 legend: {
                     position: 'top',
+                    labels: {
+                        font: {
+                            family: 'Inter',
+                            size: 12
+                        }
+                    }
                 },
                 tooltip: {
                     callbacks: {
                         label: function(context) {
                             return context.dataset.label + ': ' + context.parsed.y;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1,
+                        font: {
+                            family: 'Inter'
+                        }
+                    },
+                    grid: {
+                        borderDash: [5, 5]
+                    }
+                },
+                x: {
+                    ticks: {
+                        font: {
+                            family: 'Inter'
                         }
                     }
                 }
