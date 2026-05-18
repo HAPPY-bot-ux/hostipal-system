@@ -461,7 +461,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </details>
         </div>
     </div>
-    
+
+
+    <!-- Add a homem page thats linked to the index or login page -->
     <script>
         // Role-based placeholder text for username field
         document.querySelectorAll('input[name="role"]').forEach(radio => {
