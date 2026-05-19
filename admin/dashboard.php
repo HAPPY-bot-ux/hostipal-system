@@ -1,5 +1,5 @@
 <?php
-// admin/dashboard.php - Admin Dashboard with new design
+// admin/dashboard.php - Admin Dashboard with modern medical UI (FIXED SQL)
 require_once '../config/database.php';
 require_once '../includes/SessionManager.php';
 
@@ -48,6 +48,24 @@ $query = "SELECT COUNT(*) as total FROM appointments WHERE status = 'completed'"
 $stmt = $db->query($query);
 $stats['completed_appointments'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
+// Confirmed appointments
+$query = "SELECT COUNT(*) as total FROM appointments WHERE status = 'confirmed'";
+$stmt = $db->query($query);
+$stats['confirmed_appointments'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+
+// Cancelled appointments
+$query = "SELECT COUNT(*) as total FROM appointments WHERE status = 'cancelled'";
+$stmt = $db->query($query);
+$stats['cancelled_appointments'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+
+// Total revenue (sum of consultation fees from completed appointments)
+$query = "SELECT COALESCE(SUM(d.consultation_fee), 0) as total_revenue 
+          FROM appointments a 
+          JOIN doctors d ON a.doctor_id = d.id 
+          WHERE a.status = 'completed'";
+$stmt = $db->query($query);
+$stats['total_revenue'] = $stmt->fetch(PDO::FETCH_ASSOC)['total_revenue'];
+
 // Recent activities
 $query = "SELECT l.*, u.full_name, u.role 
           FROM system_logs l
@@ -56,15 +74,40 @@ $query = "SELECT l.*, u.full_name, u.role
           LIMIT 10";
 $stmt = $db->query($query);
 $recent_activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Get monthly appointment data for chart (last 6 months) - FIXED: Proper GROUP BY
+$monthlyQuery = "SELECT 
+                    DATE_FORMAT(appointment_date, '%b') as month,
+                    DATE_FORMAT(appointment_date, '%Y-%m') as sort_date,
+                    COUNT(*) as count
+                 FROM appointments 
+                 WHERE appointment_date >= DATE_SUB(CURDATE(), INTERVAL 5 MONTH)
+                 GROUP BY DATE_FORMAT(appointment_date, '%Y-%m'), DATE_FORMAT(appointment_date, '%b')
+                 ORDER BY sort_date ASC";
+$monthlyStmt = $db->query($monthlyQuery);
+$monthly_data = $monthlyStmt->fetchAll(PDO::FETCH_ASSOC);
+$months = array_column($monthly_data, 'month');
+$monthly_counts = array_column($monthly_data, 'count');
+
+// If no data, provide default months
+if (empty($months)) {
+    $months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    $monthly_counts = [0, 0, 0, 0, 0, 0];
+}
+
+// Get role distribution
+$roleQuery = "SELECT role, COUNT(*) as count FROM users GROUP BY role";
+$roleStmt = $db->query($roleQuery);
+$role_data = $roleStmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Hospital System</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Admin Dashboard | MediFlow HMS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -76,18 +119,20 @@ $recent_activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
             min-height: 100vh;
         }
 
-        /* Navbar Styles */
+        /* Modern Navbar */
         .navbar {
-            background: white;
-            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
-            padding: 1rem 0;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            padding: 0.75rem 0;
             position: sticky;
             top: 0;
             z-index: 1000;
+            border-bottom: 1px solid rgba(37, 99, 235, 0.1);
         }
 
         .navbar-container {
@@ -102,7 +147,7 @@ $recent_activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
         .logo {
             font-size: 1.5rem;
             font-weight: 700;
-            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            background: linear-gradient(135deg, #1e3a5f, #2563eb);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
@@ -112,27 +157,34 @@ $recent_activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
             gap: 0.5rem;
         }
 
+        .logo i {
+            background: linear-gradient(135deg, #1e3a5f, #2563eb);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
         .nav-menu {
             display: flex;
-            gap: 2rem;
+            gap: 0.5rem;
             list-style: none;
+            align-items: center;
         }
 
         .nav-link {
             text-decoration: none;
-            color: #374151;
+            color: #475569;
             font-weight: 500;
             transition: all 0.3s;
             padding: 0.5rem 1rem;
-            border-radius: 8px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
-        .nav-link:hover {
-            color: #2563eb;
-            background: #eff6ff;
-        }
-
-        .nav-link.active {
+        .nav-link:hover, .nav-link.active {
             color: #2563eb;
             background: #eff6ff;
         }
@@ -145,11 +197,10 @@ $recent_activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
         .glass-card {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 32px;
             padding: 2rem;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
         }
 
         /* Page Header */
@@ -157,87 +208,120 @@ $recent_activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
             margin-bottom: 2rem;
         }
 
-        .page-header h2 {
+        .page-header h1 {
             font-size: 1.875rem;
-            color: #1f2937;
+            font-weight: 700;
+            color: #1e293b;
             margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .page-header h1 i {
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
         }
 
         .page-header p {
-            color: #6b7280;
+            color: #64748b;
         }
 
         /* Stats Grid */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 1.25rem;
             margin-bottom: 2rem;
         }
 
         .stat-card {
             background: white;
-            padding: 1.5rem;
-            border-radius: 16px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 1.25rem;
+            border-radius: 24px;
             transition: all 0.3s;
-            border: 1px solid #e5e7eb;
+            border: 1px solid rgba(37, 99, 235, 0.08);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
         }
 
         .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px -12px rgba(0, 0, 0, 0.1);
         }
 
         .stat-icon {
-            font-size: 2rem;
-            margin-bottom: 0.75rem;
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #eff6ff, #dbeafe);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+
+        .stat-icon i {
+            font-size: 1.5rem;
+            color: #2563eb;
         }
 
         .stat-number {
             font-size: 2rem;
-            font-weight: 700;
-            color: #2563eb;
+            font-weight: 800;
+            color: #1e293b;
             line-height: 1;
+            margin-bottom: 0.25rem;
         }
 
         .stat-label {
-            color: #6b7280;
-            margin-top: 0.5rem;
-            font-size: 0.875rem;
+            color: #64748b;
+            font-size: 0.75rem;
             font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        /* Card Styles */
+        /* Chart Grid */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
         .card {
             background: white;
-            border-radius: 16px;
+            border-radius: 24px;
             padding: 1.5rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            border: 1px solid #e5e7eb;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(37, 99, 235, 0.08);
         }
 
         .card-header {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 1.25rem;
             padding-bottom: 0.75rem;
-            border-bottom: 2px solid #e5e7eb;
+            border-bottom: 2px solid #eef2ff;
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            color: #1e293b;
         }
 
-        /* Grid Layout */
-        .grid-2cols {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-            gap: 2rem;
-            margin: 2rem 0;
+        .card-header i {
+            color: #2563eb;
+        }
+
+        canvas {
+            max-height: 260px;
+            width: 100%;
         }
 
         /* Table Styles */
-        .table-container {
+        .table-wrapper {
             overflow-x: auto;
         }
 
@@ -250,90 +334,100 @@ $recent_activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
         .data-table td {
             padding: 0.875rem;
             text-align: left;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid #f1f5f9;
         }
 
         .data-table th {
-            background: #f9fafb;
             font-weight: 600;
-            color: #374151;
-            font-size: 0.875rem;
+            color: #64748b;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        .data-table tr:hover {
-            background: #f9fafb;
+        .data-table tr:hover td {
+            background: #f8fafc;
         }
 
-        /* Badge Styles */
+        /* Badges */
         .badge {
             display: inline-flex;
             align-items: center;
             padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.75rem;
+            border-radius: 40px;
+            font-size: 0.7rem;
             font-weight: 600;
-            gap: 0.375rem;
+            gap: 0.3rem;
         }
 
         .badge-admin {
             background: #fee2e2;
-            color: #991b1b;
+            color: #dc2626;
         }
 
         .badge-doctor {
             background: #dbeafe;
-            color: #1e40af;
+            color: #2563eb;
         }
 
         .badge-patient {
             background: #d1fae5;
-            color: #065f46;
+            color: #059669;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: #94a3b8;
+        }
+
+        .empty-state i {
+            font-size: 2rem;
+            color: #cbd5e1;
+            margin-bottom: 0.5rem;
+            display: block;
         }
 
         /* Animations */
         .fade-in {
-            animation: fadeIn 0.5s ease-in;
+            animation: fadeInUp 0.5s ease-out;
         }
 
-        @keyframes fadeIn {
+        @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
         /* Responsive */
+        @media (max-width: 900px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         @media (max-width: 768px) {
             .navbar-container {
                 flex-direction: column;
                 gap: 1rem;
+                padding: 0 1rem;
             }
-            
             .nav-menu {
                 flex-wrap: wrap;
                 justify-content: center;
-                gap: 0.5rem;
             }
-            
             .container {
                 padding: 0 1rem;
             }
-            
             .glass-card {
                 padding: 1rem;
             }
-            
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
                 gap: 1rem;
             }
-            
-            .grid-2cols {
-                grid-template-columns: 1fr;
-            }
-            
-            .data-table th,
-            .data-table td {
-                padding: 0.75rem 0.5rem;
-                font-size: 0.75rem;
+            .page-header h1 {
+                font-size: 1.5rem;
             }
         }
     </style>
@@ -342,15 +436,15 @@ $recent_activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <nav class="navbar">
         <div class="navbar-container">
             <a href="dashboard.php" class="logo">
-                <i class="fas fa-hospital"></i>
-                <span>Hospital System - Admin</span>
+                <i class="fas fa-heartbeat"></i>
+                <span>MediFlow HMS</span>
             </a>
             <ul class="nav-menu">
                 <li><a href="dashboard.php" class="nav-link active"><i class="fas fa-chart-line"></i> Dashboard</a></li>
-                <li><a href="manage-users.php" class="nav-link"><i class="fas fa-users"></i> Manage Users</a></li>
+                <li><a href="manage-users.php" class="nav-link"><i class="fas fa-users"></i> Users</a></li>
                 <li><a href="manage-appointments.php" class="nav-link"><i class="fas fa-calendar-check"></i> Appointments</a></li>
                 <li><a href="manage-doctors.php" class="nav-link"><i class="fas fa-user-md"></i> Doctors</a></li>
-                <li><a href="system-settings.php" class="nav-link"><i class="fas fa-cog"></i> Settings</a></li>
+                <li><a href="reports.php" class="nav-link"><i class="fas fa-chart-bar"></i> Reports</a></li>
                 <li><a href="../logout.php" class="nav-link"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
         </div>
@@ -358,190 +452,193 @@ $recent_activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     <div class="container">
         <div class="glass-card fade-in">
+            <!-- Page Header -->
             <div class="page-header">
-                <h2><i class="fas fa-tachometer-alt"></i> Admin Dashboard</h2>
-                <p>Welcome back, <?php echo htmlspecialchars(SessionManager::getFullName()); ?>! Here's what's happening in your hospital today.</p>
+                <h1><i class="fas fa-tachometer-alt"></i> Admin Dashboard</h1>
+                <p>Welcome back, <?php echo htmlspecialchars(SessionManager::getFullName()); ?>! Here's your hospital overview.</p>
             </div>
-            
+
             <!-- Statistics Cards -->
             <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-users"></i></div>
-                    <div class="stat-number"><?php echo $stats['total_users']; ?></div>
-                    <div class="stat-label">Total Users</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-user-md"></i></div>
-                    <div class="stat-number"><?php echo $stats['total_doctors']; ?></div>
-                    <div class="stat-label">Doctors</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-user"></i></div>
-                    <div class="stat-number"><?php echo $stats['total_patients']; ?></div>
-                    <div class="stat-label">Patients</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-calendar-check"></i></div>
-                    <div class="stat-number"><?php echo $stats['total_appointments']; ?></div>
-                    <div class="stat-label">Total Appointments</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-calendar-day"></i></div>
-                    <div class="stat-number"><?php echo $stats['today_appointments']; ?></div>
-                    <div class="stat-label">Today's Appointments</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-clock"></i></div>
-                    <div class="stat-number"><?php echo $stats['pending_appointments']; ?></div>
-                    <div class="stat-label">Pending</div>
-                </div>
+                <div class="stat-card"><div class="stat-icon"><i class="fas fa-users"></i></div><div class="stat-number"><?php echo $stats['total_users']; ?></div><div class="stat-label">Total Users</div></div>
+                <div class="stat-card"><div class="stat-icon"><i class="fas fa-user-md"></i></div><div class="stat-number"><?php echo $stats['total_doctors']; ?></div><div class="stat-label">Doctors</div></div>
+                <div class="stat-card"><div class="stat-icon"><i class="fas fa-user-injured"></i></div><div class="stat-number"><?php echo $stats['total_patients']; ?></div><div class="stat-label">Patients</div></div>
+                <div class="stat-card"><div class="stat-icon"><i class="fas fa-calendar-check"></i></div><div class="stat-number"><?php echo $stats['total_appointments']; ?></div><div class="stat-label">Appointments</div></div>
+                <div class="stat-card"><div class="stat-icon"><i class="fas fa-calendar-day"></i></div><div class="stat-number"><?php echo $stats['today_appointments']; ?></div><div class="stat-label">Today</div></div>
+                <div class="stat-card"><div class="stat-icon"><i class="fas fa-dollar-sign"></i></div><div class="stat-number">$<?php echo number_format($stats['total_revenue'], 0); ?></div><div class="stat-label">Revenue</div></div>
             </div>
-            
-            <!-- Charts and Recent Activities -->
-            <div class="grid-2cols">
-                <!-- Appointment Chart -->
+
+            <!-- Charts Row -->
+            <div class="charts-grid">
+                <!-- Monthly Appointments Chart -->
                 <div class="card">
                     <div class="card-header">
-                        <i class="fas fa-chart-bar" style="color: #2563eb;"></i>
-                        Appointment Statistics
+                        <i class="fas fa-chart-line"></i> Monthly Trends
                     </div>
-                    <canvas id="appointmentChart" style="max-height: 300px; width: 100%;"></canvas>
+                    <canvas id="monthlyChart"></canvas>
                 </div>
-                
+
+                <!-- User Distribution Pie Chart -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-chart-pie"></i> User Distribution
+                    </div>
+                    <canvas id="userDistributionChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Appointment Status Chart & Recent Activities -->
+            <div class="charts-grid">
+                <!-- Appointment Status Bar Chart -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-chart-bar"></i> Appointment Status
+                    </div>
+                    <canvas id="statusChart"></canvas>
+                </div>
+
                 <!-- Recent Activities -->
                 <div class="card">
                     <div class="card-header">
-                        <i class="fas fa-history" style="color: #2563eb;"></i>
-                        Recent Activities
+                        <i class="fas fa-history"></i> Recent Activities
+                        <span style="margin-left: auto; font-size: 0.65rem; color: #64748b;">Last 10 entries</span>
                     </div>
                     <?php if (count($recent_activities) > 0): ?>
-                        <div class="table-container">
+                        <div class="table-wrapper">
                             <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th><i class="fas fa-user"></i> User</th>
-                                        <th><i class="fas fa-bolt"></i> Action</th>
-                                        <th><i class="fas fa-clock"></i> Time</th>
-                                    </tr>
-                                </thead>
+                                <thead><tr><th>User</th><th>Action</th><th>Time</th></tr></thead>
                                 <tbody>
                                     <?php foreach ($recent_activities as $activity): ?>
                                     <tr>
                                         <td>
                                             <strong><?php echo htmlspecialchars($activity['full_name']); ?></strong>
-                                            <br>
-                                            <span class="badge badge-<?php echo $activity['role']; ?>">
-                                                <i class="fas <?php echo $activity['role'] == 'admin' ? 'fa-user-shield' : ($activity['role'] == 'doctor' ? 'fa-user-md' : 'fa-user'); ?>"></i>
+                                            <span class="badge badge-<?php echo $activity['role']; ?>" style="margin-left: 0.5rem;">
                                                 <?php echo ucfirst($activity['role']); ?>
                                             </span>
-                                         </td>
+                                         </span>
                                         <td><?php echo htmlspecialchars($activity['action']); ?></td>
                                         <td><?php echo date('M d, H:i', strtotime($activity['created_at'])); ?></td>
                                     </tr>
                                     <?php endforeach; ?>
                                 </tbody>
-                            </table>
-                        </div>
+                             </div>
                     <?php else: ?>
-                        <p style="text-align: center; color: #6b7280; padding: 2rem;">
-                            <i class="fas fa-inbox" style="font-size: 3rem; color: #d1d5db; margin-bottom: 1rem; display: block;"></i>
-                            No recent activities found.
-                        </p>
+                        <div class="empty-state"><i class="fas fa-inbox"></i><p>No recent activities</p></div>
                     <?php endif; ?>
                 </div>
             </div>
-            
+
             <!-- Quick Stats Footer -->
-            <div class="stats-grid" style="margin-top: 1rem;">
+            <div class="stats-grid" style="margin-top: 0.5rem;">
                 <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
-                    <div class="stat-number"><?php echo $stats['completed_appointments'] ?? 0; ?></div>
-                    <div class="stat-label">Completed Appointments</div>
+                    <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                    <div class="stat-number"><?php echo $stats['pending_appointments']; ?></div>
+                    <div class="stat-label">Pending</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
-                    <div class="stat-number"><?php echo round(($stats['completed_appointments'] / max($stats['total_appointments'], 1)) * 100); ?>%</div>
-                    <div class="stat-label">Completion Rate</div>
+                    <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                    <div class="stat-number"><?php echo $stats['confirmed_appointments']; ?></div>
+                    <div class="stat-label">Confirmed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-check-double"></i></div>
+                    <div class="stat-number"><?php echo $stats['completed_appointments']; ?></div>
+                    <div class="stat-label">Completed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-ban"></i></div>
+                    <div class="stat-number"><?php echo $stats['cancelled_appointments']; ?></div>
+                    <div class="stat-label">Cancelled</div>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <script>
-    // Chart for appointments
-    const ctx = document.getElementById('appointmentChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: ['Total', 'Today', 'Pending', 'Completed'],
-            datasets: [{
-                label: 'Appointments',
-                data: [
-                    <?php echo $stats['total_appointments']; ?>,
-                    <?php echo $stats['today_appointments']; ?>,
-                    <?php echo $stats['pending_appointments']; ?>,
-                    <?php echo $stats['completed_appointments'] ?? 0; ?>
-                ],
-                backgroundColor: [
-                    'rgba(37, 99, 235, 0.7)',
-                    'rgba(59, 130, 246, 0.7)',
-                    'rgba(245, 158, 11, 0.7)',
-                    'rgba(16, 185, 129, 0.7)'
-                ],
-                borderColor: [
-                    'rgba(37, 99, 235, 1)',
-                    'rgba(59, 130, 246, 1)',
-                    'rgba(245, 158, 11, 1)',
-                    'rgba(16, 185, 129, 1)'
-                ],
-                borderWidth: 2,
-                borderRadius: 8
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    position: 'top',
-                    labels: {
-                        font: {
-                            family: 'Inter',
-                            size: 12
-                        }
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return context.dataset.label + ': ' + context.parsed.y;
-                        }
-                    }
-                }
+        // Monthly Appointments Line Chart
+        const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+        new Chart(monthlyCtx, {
+            type: 'line',
+            data: {
+                labels: <?php echo json_encode($months); ?>,
+                datasets: [{
+                    label: 'Appointments',
+                    data: <?php echo json_encode($monthly_counts); ?>,
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.05)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.3,
+                    pointBackgroundColor: '#2563eb',
+                    pointBorderColor: 'white',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
             },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        stepSize: 1,
-                        font: {
-                            family: 'Inter'
-                        }
-                    },
-                    grid: {
-                        borderDash: [5, 5]
-                    }
-                },
-                x: {
-                    ticks: {
-                        font: {
-                            family: 'Inter'
-                        }
-                    }
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: { legend: { position: 'top', labels: { font: { family: 'Inter' } } } },
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1, font: { family: 'Inter' } } }, x: { ticks: { font: { family: 'Inter' } } } }
+            }
+        });
+
+        // User Distribution Pie Chart
+        <?php if (!empty($role_data)): ?>
+        const roleLabels = <?php echo json_encode(array_column($role_data, 'role')); ?>;
+        const roleCounts = <?php echo json_encode(array_column($role_data, 'count')); ?>;
+        const totalUsers = roleCounts.reduce((a, b) => a + b, 0);
+        
+        const pieCtx = document.getElementById('userDistributionChart').getContext('2d');
+        new Chart(pieCtx, {
+            type: 'doughnut',
+            data: {
+                labels: roleLabels.map(r => r.charAt(0).toUpperCase() + r.slice(1)),
+                datasets: [{
+                    data: roleCounts,
+                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'],
+                    borderWidth: 0,
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 12 } } },
+                    tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.raw} users (${Math.round(ctx.raw / totalUsers * 100)}%)` } }
                 }
             }
-        }
-    });
+        });
+        <?php endif; ?>
+
+        // Appointment Status Bar Chart
+        const statusCtx = document.getElementById('statusChart').getContext('2d');
+        new Chart(statusCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Pending', 'Confirmed', 'Completed', 'Cancelled'],
+                datasets: [{
+                    label: 'Appointments',
+                    data: [
+                        <?php echo $stats['pending_appointments']; ?>,
+                        <?php echo $stats['confirmed_appointments']; ?>,
+                        <?php echo $stats['completed_appointments']; ?>,
+                        <?php echo $stats['cancelled_appointments']; ?>
+                    ],
+                    backgroundColor: ['#f59e0b', '#3b82f6', '#10b981', '#ef4444'],
+                    borderRadius: 10,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1, font: { family: 'Inter' } } }, x: { ticks: { font: { family: 'Inter' } } } }
+            }
+        });
     </script>
 </body>
 </html>
