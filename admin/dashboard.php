@@ -1,9 +1,8 @@
 <?php
-// admin/dashboard.php - Admin Dashboard with modern medical UI (FIXED SQL)
+// admin/dashboard.php - Completely Redesigned Admin Dashboard
 require_once '../config/database.php';
 require_once '../includes/SessionManager.php';
 
-// Start session if not already started
 SessionManager::startSession();
 SessionManager::requireRole('admin');
 
@@ -13,52 +12,42 @@ $db = $database->getConnection();
 // Get system statistics
 $stats = [];
 
-// Total users
 $query = "SELECT COUNT(*) as total FROM users";
 $stmt = $db->query($query);
 $stats['total_users'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
-// Total doctors
 $query = "SELECT COUNT(*) as total FROM users WHERE role = 'doctor'";
 $stmt = $db->query($query);
 $stats['total_doctors'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
-// Total patients
 $query = "SELECT COUNT(*) as total FROM users WHERE role = 'patient'";
 $stmt = $db->query($query);
 $stats['total_patients'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
-// Total appointments
 $query = "SELECT COUNT(*) as total FROM appointments";
 $stmt = $db->query($query);
 $stats['total_appointments'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
-// Today's appointments
 $query = "SELECT COUNT(*) as total FROM appointments WHERE appointment_date = CURDATE()";
 $stmt = $db->query($query);
 $stats['today_appointments'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
-// Pending appointments
 $query = "SELECT COUNT(*) as total FROM appointments WHERE status = 'pending'";
 $stmt = $db->query($query);
 $stats['pending_appointments'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
-// Completed appointments
 $query = "SELECT COUNT(*) as total FROM appointments WHERE status = 'completed'";
 $stmt = $db->query($query);
 $stats['completed_appointments'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
-// Confirmed appointments
 $query = "SELECT COUNT(*) as total FROM appointments WHERE status = 'confirmed'";
 $stmt = $db->query($query);
 $stats['confirmed_appointments'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
-// Cancelled appointments
 $query = "SELECT COUNT(*) as total FROM appointments WHERE status = 'cancelled'";
 $stmt = $db->query($query);
 $stats['cancelled_appointments'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
-// Total revenue (sum of consultation fees from completed appointments)
 $query = "SELECT COALESCE(SUM(d.consultation_fee), 0) as total_revenue 
           FROM appointments a 
           JOIN doctors d ON a.doctor_id = d.id 
@@ -66,7 +55,6 @@ $query = "SELECT COALESCE(SUM(d.consultation_fee), 0) as total_revenue
 $stmt = $db->query($query);
 $stats['total_revenue'] = $stmt->fetch(PDO::FETCH_ASSOC)['total_revenue'];
 
-// Recent activities
 $query = "SELECT l.*, u.full_name, u.role 
           FROM system_logs l
           JOIN users u ON l.user_id = u.id
@@ -75,7 +63,6 @@ $query = "SELECT l.*, u.full_name, u.role
 $stmt = $db->query($query);
 $recent_activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Get monthly appointment data for chart (last 6 months) - FIXED: Proper GROUP BY
 $monthlyQuery = "SELECT 
                     DATE_FORMAT(appointment_date, '%b') as month,
                     DATE_FORMAT(appointment_date, '%Y-%m') as sort_date,
@@ -89,13 +76,11 @@ $monthly_data = $monthlyStmt->fetchAll(PDO::FETCH_ASSOC);
 $months = array_column($monthly_data, 'month');
 $monthly_counts = array_column($monthly_data, 'count');
 
-// If no data, provide default months
 if (empty($months)) {
     $months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
     $monthly_counts = [0, 0, 0, 0, 0, 0];
 }
 
-// Get role distribution
 $roleQuery = "SELECT role, COUNT(*) as count FROM users GROUP BY role";
 $roleStmt = $db->query($roleQuery);
 $role_data = $roleStmt->fetchAll(PDO::FETCH_ASSOC);
@@ -105,34 +90,83 @@ $role_data = $roleStmt->fetchAll(PDO::FETCH_ASSOC);
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard | MediFlow HMS</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <style>
+        :root {
+            --bg-main: #0A0C15;
+            --surface-card: rgba(18, 22, 33, 0.75);
+            --border-color: rgba(255, 255, 255, 0.06);
+            --text-main: #F3F4F6;
+            --text-muted: #9CA3AF;
+            --primary: #8B5CF6;
+            --primary-dark: #7C3AED;
+            --primary-glow: rgba(139, 92, 246, 0.2);
+            --accent: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --info: #3B82F6;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
+            background: var(--bg-main);
+            color: var(--text-main);
             min-height: 100vh;
+            position: relative;
         }
 
-        /* Modern Navbar */
+        .bg-orb-1 {
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            top: -100px;
+            right: -100px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.12) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .bg-orb-2 {
+            position: fixed;
+            width: 500px;
+            height: 500px;
+            bottom: -150px;
+            left: -150px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.06) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+            animation: float 25s ease-in-out infinite reverse;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(30px, -30px); }
+        }
+
         .navbar {
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-            padding: 0.75rem 0;
             position: sticky;
             top: 0;
-            z-index: 1000;
-            border-bottom: 1px solid rgba(37, 99, 235, 0.1);
+            z-index: 100;
+            background: rgba(10, 12, 21, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.75rem 0;
         }
 
         .navbar-container {
@@ -142,177 +176,185 @@ $role_data = $roleStmt->fetchAll(PDO::FETCH_ASSOC);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
 
         .logo {
-            font-size: 1.5rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #1e3a5f, #2563eb);
+            font-size: 1.4rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #FFF, var(--primary));
             -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
+            -webkit-text-fill-color: transparent;
             text-decoration: none;
             display: flex;
             align-items: center;
             gap: 0.5rem;
-        }
-
-        .logo i {
-            background: linear-gradient(135deg, #1e3a5f, #2563eb);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
         }
 
         .nav-menu {
             display: flex;
             gap: 0.5rem;
             list-style: none;
-            align-items: center;
+            flex-wrap: wrap;
         }
 
         .nav-link {
             text-decoration: none;
-            color: #475569;
+            color: var(--text-muted);
             font-weight: 500;
             transition: all 0.3s;
             padding: 0.5rem 1rem;
             border-radius: 12px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
 
         .nav-link:hover, .nav-link.active {
-            color: #2563eb;
-            background: #eff6ff;
+            color: var(--primary);
+            background: rgba(139, 92, 246, 0.1);
         }
 
-        /* Main Container */
-        .container {
+        .admin-wrapper {
+            position: relative;
+            z-index: 2;
             max-width: 1400px;
-            margin: 2rem auto;
+            margin: 1.5rem auto;
             padding: 0 2rem;
         }
 
-        .glass-card {
-            background: rgba(255, 255, 255, 0.96);
+        /* Hero Section */
+        .hero-section {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.12) 0%, rgba(59, 130, 246, 0.06) 100%);
+            border: 1px solid var(--border-color);
             border-radius: 32px;
-            padding: 2rem;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
-        }
-
-        /* Page Header */
-        .page-header {
+            padding: 1.75rem 2rem;
             margin-bottom: 2rem;
-        }
-
-        .page-header h1 {
-            font-size: 1.875rem;
-            font-weight: 700;
-            color: #1e293b;
-            margin-bottom: 0.5rem;
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 0.75rem;
+            flex-wrap: wrap;
+            gap: 1.5rem;
         }
 
-        .page-header h1 i {
-            background: linear-gradient(135deg, #2563eb, #3b82f6);
+        .hero-info h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .hero-info h1 span {
+            background: linear-gradient(135deg, #FFF, var(--primary));
             -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
+            -webkit-text-fill-color: transparent;
         }
 
-        .page-header p {
-            color: #64748b;
+        .hero-info p {
+            color: var(--text-muted);
         }
 
-        /* Stats Grid */
-        .stats-grid {
+        .hero-date {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.5rem 1rem;
+            border-radius: 40px;
+            font-size: 0.8rem;
+        }
+
+        /* Metrics Row */
+        .metrics-row {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-            gap: 1.25rem;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
             margin-bottom: 2rem;
         }
 
-        .stat-card {
-            background: white;
-            padding: 1.25rem;
+        .metric-card {
+            background: rgba(18, 22, 33, 0.5);
+            border: 1px solid var(--border-color);
             border-radius: 24px;
+            padding: 1.25rem;
             transition: all 0.3s;
-            border: 1px solid rgba(37, 99, 235, 0.08);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
         }
 
-        .stat-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 24px -12px rgba(0, 0, 0, 0.1);
+        .metric-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-3px);
         }
 
-        .stat-icon {
-            width: 48px;
-            height: 48px;
-            background: linear-gradient(135deg, #eff6ff, #dbeafe);
-            border-radius: 20px;
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .metric-icon {
+            width: 44px;
+            height: 44px;
+            background: rgba(139, 92, 246, 0.1);
+            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 1rem;
         }
 
-        .stat-icon i {
-            font-size: 1.5rem;
-            color: #2563eb;
+        .metric-icon i {
+            font-size: 1.3rem;
+            color: var(--primary);
         }
 
-        .stat-number {
-            font-size: 2rem;
+        .metric-value {
+            font-size: 1.8rem;
             font-weight: 800;
-            color: #1e293b;
-            line-height: 1;
-            margin-bottom: 0.25rem;
         }
 
-        .stat-label {
-            color: #64748b;
-            font-size: 0.75rem;
-            font-weight: 500;
+        .metric-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
-        /* Chart Grid */
-        .charts-grid {
+        /* Two Column Layout */
+        .two-columns {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+            grid-template-columns: 1fr 1fr;
             gap: 1.5rem;
             margin-bottom: 1.5rem;
         }
 
-        .card {
-            background: white;
-            border-radius: 24px;
-            padding: 1.5rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-            border: 1px solid rgba(37, 99, 235, 0.08);
+        .glass-card {
+            background: rgba(18, 22, 33, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 28px;
+            overflow: hidden;
         }
 
         .card-header {
-            font-size: 1.1rem;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(139, 92, 246, 0.03);
+        }
+
+        .card-header h3 {
+            font-size: 1rem;
             font-weight: 700;
-            margin-bottom: 1.25rem;
-            padding-bottom: 0.75rem;
-            border-bottom: 2px solid #eef2ff;
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            color: #1e293b;
         }
 
-        .card-header i {
-            color: #2563eb;
+        .card-header h3 i {
+            color: var(--primary);
+        }
+
+        .card-body {
+            padding: 1.5rem;
         }
 
         canvas {
@@ -320,124 +362,163 @@ $role_data = $roleStmt->fetchAll(PDO::FETCH_ASSOC);
             width: 100%;
         }
 
-        /* Table Styles */
-        .table-wrapper {
-            overflow-x: auto;
+        /* Status Cards Row */
+        .status-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
         }
 
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
+        .status-card {
+            background: rgba(18, 22, 33, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 1rem;
+            text-align: center;
+            transition: all 0.2s;
         }
 
-        .data-table th,
-        .data-table td {
-            padding: 0.875rem;
-            text-align: left;
-            border-bottom: 1px solid #f1f5f9;
+        .status-card:hover {
+            border-color: var(--primary);
         }
 
-        .data-table th {
-            font-weight: 600;
-            color: #64748b;
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+        .status-value {
+            font-size: 1.5rem;
+            font-weight: 800;
         }
 
-        .data-table tr:hover td {
-            background: #f8fafc;
+        .status-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
         }
 
-        /* Badges */
-        .badge {
-            display: inline-flex;
+        .status-pending .status-value { color: var(--warning); }
+        .status-confirmed .status-value { color: var(--info); }
+        .status-completed .status-value { color: var(--accent); }
+        .status-cancelled .status-value { color: var(--danger); }
+
+        /* Activities Table */
+        .activities-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .activity-item {
+            display: flex;
             align-items: center;
-            padding: 0.25rem 0.75rem;
-            border-radius: 40px;
-            font-size: 0.7rem;
+            justify-content: space-between;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 16px;
+            transition: all 0.2s;
+        }
+
+        .activity-item:hover {
+            background: rgba(139, 92, 246, 0.08);
+        }
+
+        .activity-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .activity-avatar {
+            width: 36px;
+            height: 36px;
+            background: rgba(139, 92, 246, 0.15);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-weight: 600;
-            gap: 0.3rem;
+            font-size: 0.8rem;
         }
 
-        .badge-admin {
-            background: #fee2e2;
-            color: #dc2626;
+        .activity-details h4 {
+            font-size: 0.85rem;
+            margin-bottom: 0.2rem;
         }
 
-        .badge-doctor {
-            background: #dbeafe;
-            color: #2563eb;
+        .activity-details p {
+            font-size: 0.65rem;
+            color: var(--text-muted);
         }
 
-        .badge-patient {
-            background: #d1fae5;
-            color: #059669;
+        .activity-time {
+            font-size: 0.65rem;
+            color: var(--text-muted);
         }
 
-        /* Empty State */
+        .role-badge {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 20px;
+            font-size: 0.55rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+
+        .role-admin { background: rgba(239, 68, 68, 0.15); color: #F87171; }
+        .role-doctor { background: rgba(14, 165, 233, 0.15); color: #7DD3FC; }
+        .role-patient { background: rgba(16, 185, 129, 0.15); color: #34D399; }
+
         .empty-state {
             text-align: center;
             padding: 2rem;
-            color: #94a3b8;
-        }
-
-        .empty-state i {
-            font-size: 2rem;
-            color: #cbd5e1;
-            margin-bottom: 0.5rem;
-            display: block;
-        }
-
-        /* Animations */
-        .fade-in {
-            animation: fadeInUp 0.5s ease-out;
-        }
-
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+            color: var(--text-muted);
         }
 
         /* Responsive */
-        @media (max-width: 900px) {
-            .charts-grid {
+        @media (max-width: 1000px) {
+            .metrics-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .two-columns {
                 grid-template-columns: 1fr;
+            }
+            .status-row {
+                grid-template-columns: repeat(2, 1fr);
             }
         }
 
         @media (max-width: 768px) {
             .navbar-container {
                 flex-direction: column;
-                gap: 1rem;
                 padding: 0 1rem;
             }
             .nav-menu {
-                flex-wrap: wrap;
                 justify-content: center;
             }
-            .container {
+            .admin-wrapper {
                 padding: 0 1rem;
             }
-            .glass-card {
-                padding: 1rem;
+            .hero-section {
+                flex-direction: column;
+                text-align: center;
             }
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 1rem;
+            .metrics-row {
+                grid-template-columns: 1fr;
             }
-            .page-header h1 {
-                font-size: 1.5rem;
+            .status-row {
+                grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
 <body>
+
+    <div class="bg-orb-1"></div>
+    <div class="bg-orb-2"></div>
+
     <nav class="navbar">
         <div class="navbar-container">
             <a href="dashboard.php" class="logo">
-                <i class="fas fa-heartbeat"></i>
-                <span>MediFlow HMS</span>
+                <i class="fas fa-heart-pulse"></i>
+                <span>Hospital System</span>
             </a>
             <ul class="nav-menu">
                 <li><a href="dashboard.php" class="nav-link active"><i class="fas fa-chart-line"></i> Dashboard</a></li>
@@ -450,112 +531,178 @@ $role_data = $roleStmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
     </nav>
 
-    <div class="container">
-        <div class="glass-card fade-in">
-            <!-- Page Header -->
-            <div class="page-header">
-                <h1><i class="fas fa-tachometer-alt"></i> Admin Dashboard</h1>
-                <p>Welcome back, <?php echo htmlspecialchars(SessionManager::getFullName()); ?>! Here's your hospital overview.</p>
+    <div class="admin-wrapper">
+        <!-- Hero Section -->
+        <div class="hero-section">
+            <div class="hero-info">
+                <h1>Welcome back, <span><?php echo htmlspecialchars(SessionManager::getFullName()); ?></span></h1>
+                <p>Here's your hospital management overview</p>
             </div>
-
-            <!-- Statistics Cards -->
-            <div class="stats-grid">
-                <div class="stat-card"><div class="stat-icon"><i class="fas fa-users"></i></div><div class="stat-number"><?php echo $stats['total_users']; ?></div><div class="stat-label">Total Users</div></div>
-                <div class="stat-card"><div class="stat-icon"><i class="fas fa-user-md"></i></div><div class="stat-number"><?php echo $stats['total_doctors']; ?></div><div class="stat-label">Doctors</div></div>
-                <div class="stat-card"><div class="stat-icon"><i class="fas fa-user-injured"></i></div><div class="stat-number"><?php echo $stats['total_patients']; ?></div><div class="stat-label">Patients</div></div>
-                <div class="stat-card"><div class="stat-icon"><i class="fas fa-calendar-check"></i></div><div class="stat-number"><?php echo $stats['total_appointments']; ?></div><div class="stat-label">Appointments</div></div>
-                <div class="stat-card"><div class="stat-icon"><i class="fas fa-calendar-day"></i></div><div class="stat-number"><?php echo $stats['today_appointments']; ?></div><div class="stat-label">Today</div></div>
-                <div class="stat-card"><div class="stat-icon"><i class="fas fa-dollar-sign"></i></div><div class="stat-number">$<?php echo number_format($stats['total_revenue'], 0); ?></div><div class="stat-label">Revenue</div></div>
+            <div class="hero-date">
+                <i class="fas fa-calendar-alt"></i> <?php echo date('l, F j, Y'); ?>
             </div>
+        </div>
 
-            <!-- Charts Row -->
-            <div class="charts-grid">
-                <!-- Monthly Appointments Chart -->
-                <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-chart-line"></i> Monthly Trends
-                    </div>
+        <!-- Key Metrics -->
+        <div class="metrics-row">
+            <div class="metric-card">
+                <div class="metric-header">
+                    <div class="metric-icon"><i class="fas fa-users"></i></div>
+                </div>
+                <div class="metric-value"><?php echo $stats['total_users']; ?></div>
+                <div class="metric-label">Total Users</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-header">
+                    <div class="metric-icon"><i class="fas fa-user-md"></i></div>
+                </div>
+                <div class="metric-value"><?php echo $stats['total_doctors']; ?></div>
+                <div class="metric-label">Doctors</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-header">
+                    <div class="metric-icon"><i class="fas fa-user-injured"></i></div>
+                </div>
+                <div class="metric-value"><?php echo $stats['total_patients']; ?></div>
+                <div class="metric-label">Patients</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-header">
+                    <div class="metric-icon"><i class="fas fa-calendar-check"></i></div>
+                </div>
+                <div class="metric-value"><?php echo $stats['total_appointments']; ?></div>
+                <div class="metric-label">Total Appointments</div>
+            </div>
+        </div>
+
+        <!-- Two Column Charts -->
+        <div class="two-columns">
+            <!-- Monthly Trends Chart -->
+            <div class="glass-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-chart-line"></i> Monthly Trends</h3>
+                    <span style="font-size: 0.65rem; color: var(--text-muted);">Last 6 months</span>
+                </div>
+                <div class="card-body">
                     <canvas id="monthlyChart"></canvas>
                 </div>
+            </div>
 
-                <!-- User Distribution Pie Chart -->
-                <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-chart-pie"></i> User Distribution
-                    </div>
+            <!-- User Distribution Chart -->
+            <div class="glass-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-chart-pie"></i> User Distribution</h3>
+                </div>
+                <div class="card-body">
                     <canvas id="userDistributionChart"></canvas>
                 </div>
             </div>
+        </div>
 
-            <!-- Appointment Status Chart & Recent Activities -->
-            <div class="charts-grid">
-                <!-- Appointment Status Bar Chart -->
-                <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-chart-bar"></i> Appointment Status
-                    </div>
-                    <canvas id="statusChart"></canvas>
+        <!-- Appointment Status Row -->
+        <div class="status-row">
+            <div class="status-card status-pending">
+                <div class="status-value"><?php echo $stats['pending_appointments']; ?></div>
+                <div class="status-label"><i class="fas fa-clock"></i> Pending</div>
+            </div>
+            <div class="status-card status-confirmed">
+                <div class="status-value"><?php echo $stats['confirmed_appointments']; ?></div>
+                <div class="status-label"><i class="fas fa-check-circle"></i> Confirmed</div>
+            </div>
+            <div class="status-card status-completed">
+                <div class="status-value"><?php echo $stats['completed_appointments']; ?></div>
+                <div class="status-label"><i class="fas fa-check-double"></i> Completed</div>
+            </div>
+            <div class="status-card status-cancelled">
+                <div class="status-value"><?php echo $stats['cancelled_appointments']; ?></div>
+                <div class="status-label"><i class="fas fa-ban"></i> Cancelled</div>
+            </div>
+        </div>
+
+        <!-- Recent Activities & Revenue -->
+        <div class="two-columns">
+            <!-- Recent Activities -->
+            <div class="glass-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-history"></i> Recent Activities</h3>
+                    <span style="font-size: 0.65rem; color: var(--text-muted);">Last 10 entries</span>
                 </div>
-
-                <!-- Recent Activities -->
-                <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-history"></i> Recent Activities
-                        <span style="margin-left: auto; font-size: 0.65rem; color: #64748b;">Last 10 entries</span>
-                    </div>
+                <div class="card-body">
                     <?php if (count($recent_activities) > 0): ?>
-                        <div class="table-wrapper">
-                            <table class="data-table">
-                                <thead><tr><th>User</th><th>Action</th><th>Time</th></tr></thead>
-                                <tbody>
-                                    <?php foreach ($recent_activities as $activity): ?>
-                                    <tr>
-                                        <td>
-                                            <strong><?php echo htmlspecialchars($activity['full_name']); ?></strong>
-                                            <span class="badge badge-<?php echo $activity['role']; ?>" style="margin-left: 0.5rem;">
-                                                <?php echo ucfirst($activity['role']); ?>
-                                            </span>
-                                         </span>
-                                        <td><?php echo htmlspecialchars($activity['action']); ?></td>
-                                        <td><?php echo date('M d, H:i', strtotime($activity['created_at'])); ?></td>
-                                    </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                             </div>
+                        <div class="activities-list">
+                            <?php foreach ($recent_activities as $activity): ?>
+                                <div class="activity-item">
+                                    <div class="activity-info">
+                                        <div class="activity-avatar">
+                                            <?php echo strtoupper(substr($activity['full_name'], 0, 1)); ?>
+                                        </div>
+                                        <div class="activity-details">
+                                            <h4>
+                                                <?php echo htmlspecialchars($activity['full_name']); ?>
+                                                <span class="role-badge role-<?php echo $activity['role']; ?>">
+                                                    <?php echo ucfirst($activity['role']); ?>
+                                                </span>
+                                            </h4>
+                                            <p><?php echo htmlspecialchars($activity['action']); ?></p>
+                                        </div>
+                                    </div>
+                                    <div class="activity-time">
+                                        <?php echo date('M d, H:i', strtotime($activity['created_at'])); ?>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
                     <?php else: ?>
-                        <div class="empty-state"><i class="fas fa-inbox"></i><p>No recent activities</p></div>
+                        <div class="empty-state">
+                            <i class="fas fa-inbox" style="font-size: 2rem; opacity: 0.5;"></i>
+                            <p>No recent activities</p>
+                        </div>
                     <?php endif; ?>
                 </div>
             </div>
 
-            <!-- Quick Stats Footer -->
-            <div class="stats-grid" style="margin-top: 0.5rem;">
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-clock"></i></div>
-                    <div class="stat-number"><?php echo $stats['pending_appointments']; ?></div>
-                    <div class="stat-label">Pending</div>
+            <!-- Today & Revenue Summary -->
+            <div class="glass-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-chart-simple"></i> Quick Summary</h3>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
-                    <div class="stat-number"><?php echo $stats['confirmed_appointments']; ?></div>
-                    <div class="stat-label">Confirmed</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-check-double"></i></div>
-                    <div class="stat-number"><?php echo $stats['completed_appointments']; ?></div>
-                    <div class="stat-label">Completed</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-ban"></i></div>
-                    <div class="stat-number"><?php echo $stats['cancelled_appointments']; ?></div>
-                    <div class="stat-label">Cancelled</div>
+                <div class="card-body">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; border-bottom: 1px solid var(--border-color);">
+                        <div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted);">Today's Appointments</div>
+                            <div style="font-size: 2rem; font-weight: 800; color: var(--primary);"><?php echo $stats['today_appointments']; ?></div>
+                        </div>
+                        <i class="fas fa-calendar-day" style="font-size: 2rem; opacity: 0.3;"></i>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 0;">
+                        <div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted);">Total Revenue</div>
+                            <div style="font-size: 2rem; font-weight: 800; color: var(--accent);">R<?php echo number_format($stats['total_revenue'], 0); ?></div>
+                        </div>
+                        <i class="fas fa-dollar-sign" style="font-size: 2rem; opacity: 0.3;"></i>
+                    </div>
+                    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                            <span>Completion Rate</span>
+                            <span style="color: var(--accent);">
+                                <?php echo $stats['total_appointments'] > 0 ? round(($stats['completed_appointments'] / $stats['total_appointments']) * 100) : 0; ?>%
+                            </span>
+                        </div>
+                        <div class="progress-bar" style="background: rgba(255,255,255,0.1); border-radius: 10px; height: 6px; margin-top: 0.5rem;">
+                            <div style="width: <?php echo $stats['total_appointments'] > 0 ? round(($stats['completed_appointments'] / $stats['total_appointments']) * 100) : 0; ?>%; background: var(--accent); height: 6px; border-radius: 10px;"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Monthly Appointments Line Chart
+        // Set admin theme
+        document.documentElement.style.setProperty('--primary', '#8B5CF6');
+        document.documentElement.style.setProperty('--primary-dark', '#7C3AED');
+
+        // Monthly Chart
         const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
         new Chart(monthlyCtx, {
             type: 'line',
@@ -564,13 +711,13 @@ $role_data = $roleStmt->fetchAll(PDO::FETCH_ASSOC);
                 datasets: [{
                     label: 'Appointments',
                     data: <?php echo json_encode($monthly_counts); ?>,
-                    borderColor: '#2563eb',
-                    backgroundColor: 'rgba(37, 99, 235, 0.05)',
+                    borderColor: '#8B5CF6',
+                    backgroundColor: 'rgba(139, 92, 246, 0.05)',
                     borderWidth: 3,
                     fill: true,
                     tension: 0.3,
-                    pointBackgroundColor: '#2563eb',
-                    pointBorderColor: 'white',
+                    pointBackgroundColor: '#8B5CF6',
+                    pointBorderColor: '#0A0C15',
                     pointBorderWidth: 2,
                     pointRadius: 5,
                     pointHoverRadius: 7
@@ -579,12 +726,12 @@ $role_data = $roleStmt->fetchAll(PDO::FETCH_ASSOC);
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
-                plugins: { legend: { position: 'top', labels: { font: { family: 'Inter' } } } },
-                scales: { y: { beginAtZero: true, ticks: { stepSize: 1, font: { family: 'Inter' } } }, x: { ticks: { font: { family: 'Inter' } } } }
+                plugins: { legend: { labels: { color: '#9CA3AF', font: { family: 'Plus Jakarta Sans' } } } },
+                scales: { y: { beginAtZero: true, ticks: { color: '#9CA3AF', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.05)' } }, x: { ticks: { color: '#9CA3AF' }, grid: { display: false } } }
             }
         });
 
-        // User Distribution Pie Chart
+        // User Distribution Chart
         <?php if (!empty($role_data)): ?>
         const roleLabels = <?php echo json_encode(array_column($role_data, 'role')); ?>;
         const roleCounts = <?php echo json_encode(array_column($role_data, 'count')); ?>;
@@ -597,7 +744,7 @@ $role_data = $roleStmt->fetchAll(PDO::FETCH_ASSOC);
                 labels: roleLabels.map(r => r.charAt(0).toUpperCase() + r.slice(1)),
                 datasets: [{
                     data: roleCounts,
-                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'],
+                    backgroundColor: ['#8B5CF6', '#0EA5E9', '#10B981'],
                     borderWidth: 0,
                     hoverOffset: 10
                 }]
@@ -606,39 +753,12 @@ $role_data = $roleStmt->fetchAll(PDO::FETCH_ASSOC);
                 responsive: true,
                 maintainAspectRatio: true,
                 plugins: {
-                    legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 12 } } },
+                    legend: { position: 'bottom', labels: { color: '#9CA3AF', font: { family: 'Plus Jakarta Sans', size: 11 } } },
                     tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.raw} users (${Math.round(ctx.raw / totalUsers * 100)}%)` } }
                 }
             }
         });
         <?php endif; ?>
-
-        // Appointment Status Bar Chart
-        const statusCtx = document.getElementById('statusChart').getContext('2d');
-        new Chart(statusCtx, {
-            type: 'bar',
-            data: {
-                labels: ['Pending', 'Confirmed', 'Completed', 'Cancelled'],
-                datasets: [{
-                    label: 'Appointments',
-                    data: [
-                        <?php echo $stats['pending_appointments']; ?>,
-                        <?php echo $stats['confirmed_appointments']; ?>,
-                        <?php echo $stats['completed_appointments']; ?>,
-                        <?php echo $stats['cancelled_appointments']; ?>
-                    ],
-                    backgroundColor: ['#f59e0b', '#3b82f6', '#10b981', '#ef4444'],
-                    borderRadius: 10,
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true, ticks: { stepSize: 1, font: { family: 'Inter' } } }, x: { ticks: { font: { family: 'Inter' } } } }
-            }
-        });
     </script>
 </body>
 </html>

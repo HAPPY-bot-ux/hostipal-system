@@ -1,9 +1,8 @@
 <?php
-// patient/dashboard.php - Patient Dashboard with enhanced modern medical UI
+// patient/dashboard.php - Completely Redesigned Patient Dashboard
 require_once '../config/database.php';
 require_once '../includes/SessionManager.php';
 
-// Start session if not already started
 SessionManager::startSession();
 SessionManager::requireRole('patient');
 
@@ -61,7 +60,7 @@ $stmt->bindParam(':user_id', $user_id);
 $stmt->execute();
 $recent_records = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Get recommended doctors (doctors with most appointments or random)
+// Get recommended doctors
 $recommendedQuery = "SELECT d.*, u.full_name, u.email, u.phone,
                      COUNT(a.id) as appointment_count
                      FROM doctors d
@@ -70,7 +69,7 @@ $recommendedQuery = "SELECT d.*, u.full_name, u.email, u.phone,
                      WHERE u.is_active = 1
                      GROUP BY d.id
                      ORDER BY appointment_count DESC
-                     LIMIT 3";
+                     LIMIT 4";
 $recommendedStmt = $db->query($recommendedQuery);
 $recommended_doctors = $recommendedStmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
@@ -81,31 +80,83 @@ $recommended_doctors = $recommendedStmt->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Patient Dashboard | MediFlow HMS</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
+        /* Design Variables */
+        :root {
+            --bg-main: #0A0C15;
+            --surface-card: rgba(18, 22, 33, 0.75);
+            --border-color: rgba(255, 255, 255, 0.06);
+            --text-main: #F3F4F6;
+            --text-muted: #9CA3AF;
+            --primary: #6366F1;
+            --primary-dark: #4F46E5;
+            --primary-glow: rgba(99, 102, 241, 0.2);
+            --accent: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --info: #3B82F6;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
+            background: var(--bg-main);
+            color: var(--text-main);
             min-height: 100vh;
+            position: relative;
         }
 
-        /* Modern Navbar */
+        /* Animated Background */
+        .bg-orb-1 {
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            top: -100px;
+            right: -100px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .bg-orb-2 {
+            position: fixed;
+            width: 500px;
+            height: 500px;
+            bottom: -150px;
+            left: -150px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+            animation: float 25s ease-in-out infinite reverse;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(30px, -30px); }
+        }
+
+        /* Navbar */
         .navbar {
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-            padding: 0.75rem 0;
             position: sticky;
             top: 0;
-            z-index: 1000;
-            border-bottom: 1px solid rgba(37, 99, 235, 0.1);
+            z-index: 100;
+            background: rgba(10, 12, 21, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.75rem 0;
         }
 
         .navbar-container {
@@ -113,403 +164,439 @@ $recommended_doctors = $recommendedStmt->fetchAll(PDO::FETCH_ASSOC);
             margin: 0 auto;
             padding: 0 2rem;
             display: flex;
-            justify-content: space-between;
+ justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
 
         .logo {
-            font-size: 1.5rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #1e3a5f, #2563eb);
+            font-size: 1.4rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #FFF, var(--primary));
             -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
+            -webkit-text-fill-color: transparent;
             text-decoration: none;
             display: flex;
             align-items: center;
             gap: 0.5rem;
-        }
-
-        .logo i {
-            background: linear-gradient(135deg, #1e3a5f, #2563eb);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
         }
 
         .nav-menu {
             display: flex;
             gap: 0.5rem;
             list-style: none;
-            align-items: center;
+            flex-wrap: wrap;
         }
 
         .nav-link {
             text-decoration: none;
-            color: #475569;
+            color: var(--text-muted);
             font-weight: 500;
             transition: all 0.3s;
             padding: 0.5rem 1rem;
             border-radius: 12px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
 
-        .nav-link:hover {
-            color: #2563eb;
-            background: #eff6ff;
+        .nav-link:hover, .nav-link.active {
+            color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
         }
 
-        .nav-link.active {
-            color: #2563eb;
-            background: #eff6ff;
-        }
-
-        /* Main Container */
-        .container {
+        /* Main Layout */
+        .dashboard-wrapper {
+            position: relative;
+            z-index: 2;
             max-width: 1400px;
-            margin: 2rem auto;
+            margin: 1.5rem auto;
             padding: 0 2rem;
         }
 
-        /* Welcome Section */
-        .welcome-section {
-            background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
-            border-radius: 28px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            position: relative;
-            overflow: hidden;
-            color: white;
-        }
-
-        .welcome-section::before {
-            content: "♥";
-            position: absolute;
-            right: -20px;
-            bottom: -30px;
-            font-size: 150px;
-            opacity: 0.08;
-            font-weight: 300;
-        }
-
-        .welcome-content h2 {
-            font-size: 1.75rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-
-        .welcome-content p {
-            opacity: 0.9;
-            margin-bottom: 1rem;
-        }
-
-        .patient-since {
-            display: inline-flex;
+        /* Top Bar with Greeting */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 0.5rem;
-            background: rgba(255, 255, 255, 0.2);
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .greeting h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+        }
+
+        .greeting p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .date-badge {
+            background: rgba(255, 255, 255, 0.03);
             padding: 0.5rem 1rem;
             border-radius: 40px;
             font-size: 0.8rem;
-            backdrop-filter: blur(4px);
+            border: 1px solid var(--border-color);
         }
 
-        /* Stats Grid - Modern Cards */
-        .stats-grid {
+        /* Metric Cards Row */
+        .metrics-row {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(4, 1fr);
             gap: 1.25rem;
             margin-bottom: 2rem;
         }
 
-        .stat-card {
-            background: white;
-            padding: 1.25rem;
+        .metric-card {
+            background: rgba(18, 22, 33, 0.5);
+            border: 1px solid var(--border-color);
             border-radius: 24px;
+            padding: 1.25rem;
             transition: all 0.3s;
-            border: 1px solid rgba(37, 99, 235, 0.08);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
         }
 
-        .stat-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.1);
-            border-color: rgba(37, 99, 235, 0.2);
+        .metric-card:hover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.05);
+            transform: translateY(-3px);
         }
 
-        .stat-icon {
-            width: 48px;
-            height: 48px;
-            background: linear-gradient(135deg, #eff6ff, #dbeafe);
-            border-radius: 20px;
+        .metric-header {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            justify-content: center;
             margin-bottom: 1rem;
         }
 
-        .stat-icon i {
-            font-size: 1.5rem;
-            color: #2563eb;
-        }
-
-        .stat-number {
-            font-size: 2rem;
-            font-weight: 800;
-            color: #1e293b;
-            line-height: 1;
-            margin-bottom: 0.25rem;
-        }
-
-        .stat-label {
-            color: #64748b;
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-
-        /* Dashboard Grid */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        /* Cards */
-        .card {
-            background: white;
-            border-radius: 24px;
-            padding: 1.5rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-            border: 1px solid rgba(37, 99, 235, 0.08);
-            transition: all 0.3s;
-        }
-
-        .card:hover {
-            box-shadow: 0 12px 24px -12px rgba(0, 0, 0, 0.1);
-        }
-
-        .card-header {
-            font-size: 1.125rem;
-            font-weight: 700;
-            margin-bottom: 1.25rem;
-            padding-bottom: 0.75rem;
-            border-bottom: 2px solid #eef2ff;
+        .metric-icon {
+            width: 44px;
+            height: 44px;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 16px;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            color: #1e293b;
+            justify-content: center;
         }
 
-        .card-header i {
-            color: #2563eb;
+        .metric-icon i {
+            font-size: 1.3rem;
+            color: var(--primary);
         }
 
-        /* Table Styles */
-        .table-container {
-            overflow-x: auto;
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 800;
         }
 
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .data-table th,
-        .data-table td {
-            padding: 0.875rem 0.5rem;
-            text-align: left;
-            border-bottom: 1px solid #f1f5f9;
-        }
-
-        .data-table th {
-            font-weight: 600;
-            color: #64748b;
-            font-size: 0.75rem;
+        .metric-label {
+            color: var(--text-muted);
+            font-size: 0.7rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
-        .data-table tr:hover td {
-            background: #f8fafc;
+        /* Two Column Layout */
+        .two-columns {
+            display: grid;
+            grid-template-columns: 1.3fr 0.7fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
         }
 
-        /* Badges */
-        .badge {
-            display: inline-flex;
+        /* Timeline Style Appointments */
+        .timeline-card {
+            background: rgba(18, 22, 33, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 28px;
+            overflow: hidden;
+        }
+
+        .card-head {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
             align-items: center;
-            padding: 0.25rem 0.75rem;
-            border-radius: 40px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            gap: 0.375rem;
         }
 
-        .badge-pending {
-            background: #fef3c7;
-            color: #d97706;
-        }
-
-        .badge-confirmed {
-            background: #dbeafe;
-            color: #2563eb;
-        }
-
-        .badge-completed {
-            background: #d1fae5;
-            color: #059669;
-        }
-
-        .badge-cancelled {
-            background: #fee2e2;
-            color: #dc2626;
-        }
-
-        /* Buttons */
-        .btn {
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            font-weight: 600;
-            transition: all 0.2s;
-            display: inline-flex;
+        .card-head h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            display: flex;
             align-items: center;
             gap: 0.5rem;
         }
 
-        .btn-primary {
-            background: linear-gradient(135deg, #2563eb, #3b82f6);
-            color: white;
+        .timeline-list {
+            padding: 0.5rem 0;
         }
 
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 14px rgba(37, 99, 235, 0.3);
+        .timeline-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            transition: all 0.2s;
         }
 
-        .btn-danger {
-            background: #fee2e2;
-            color: #dc2626;
+        .timeline-item:hover {
+            background: rgba(99, 102, 241, 0.05);
         }
 
-        .btn-danger:hover {
-            background: #fecaca;
-            transform: translateY(-1px);
+        .timeline-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 10px;
+            background: var(--primary);
+            margin-right: 1rem;
+            box-shadow: 0 0 8px var(--primary);
         }
 
-        .btn-outline {
-            background: transparent;
-            border: 1px solid #2563eb;
-            color: #2563eb;
+        .timeline-dot.pending {
+            background: var(--warning);
+            box-shadow: 0 0 8px var(--warning);
         }
 
-        .btn-outline:hover {
-            background: #eff6ff;
+        .timeline-content {
+            flex: 1;
         }
 
-        .btn-sm {
-            padding: 0.375rem 0.875rem;
+        .timeline-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .timeline-sub {
             font-size: 0.7rem;
+            color: var(--text-muted);
         }
 
-        /* Doctor Cards */
-        .doctor-grid {
+        .timeline-time {
+            font-size: 0.75rem;
+            color: var(--primary);
+        }
+
+        .cancel-btn {
+            background: rgba(239, 68, 68, 0.1);
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            color: #F87171;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .cancel-btn:hover {
+            background: rgba(239, 68, 68, 0.2);
+        }
+
+        /* Quick Actions Grid */
+        .quick-actions {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1rem;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
         }
 
-        .doctor-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 1rem;
-            background: #f8fafc;
+        .action-btn {
+            background: rgba(18, 22, 33, 0.5);
+            border: 1px solid var(--border-color);
             border-radius: 20px;
-            transition: all 0.3s;
+            padding: 1rem;
+            text-align: center;
+            text-decoration: none;
+            color: var(--text-main);
+            transition: all 0.2s;
         }
 
-        .doctor-item:hover {
-            background: #f1f5f9;
-            transform: translateX(4px);
+        .action-btn:hover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.08);
+            transform: translateY(-2px);
         }
 
-        .doctor-info {
+        .action-btn i {
+            font-size: 1.4rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .action-btn span {
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        /* Records List Compact */
+        .records-list {
+            background: rgba(18, 22, 33, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 28px;
+            overflow: hidden;
+        }
+
+        .record-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .record-item:last-child {
+            border-bottom: none;
+        }
+
+        .record-info h4 {
+            font-size: 0.85rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .record-info p {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        .view-record {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .view-record:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Doctors Grid */
+        .doctors-section {
+            background: rgba(18, 22, 33, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 28px;
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 1.25rem;
             display: flex;
             align-items: center;
+            gap: 0.5rem;
+        }
+
+        .doctors-horizontal {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
             gap: 1rem;
         }
 
-        .doctor-avatar {
-            width: 52px;
-            height: 52px;
-            background: linear-gradient(135deg, #2563eb, #3b82f6);
+        .doc-card {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 20px;
+            padding: 1rem;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .doc-card:hover {
+            background: rgba(99, 102, 241, 0.08);
+            transform: translateY(-3px);
+        }
+
+        .doc-avatar {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             border-radius: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-size: 1.25rem;
-            font-weight: 600;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0 auto 0.75rem;
         }
 
-        .doctor-details h4 {
-            font-size: 1rem;
-            font-weight: 700;
-            color: #1e293b;
+        .doc-card h4 {
+            font-size: 0.85rem;
             margin-bottom: 0.25rem;
         }
 
-        .doctor-details p {
+        .doc-specialty {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .doc-fee {
             font-size: 0.7rem;
-            color: #64748b;
-            margin: 0.125rem 0;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.75rem;
+        }
+
+        .book-btn {
+            background: rgba(99, 102, 241, 0.15);
+            border: none;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            color: var(--primary);
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .book-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Tips Strip */
+        .tips-strip {
+            background: linear-gradient(90deg, rgba(99, 102, 241, 0.1), rgba(16, 185, 129, 0.05));
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 1rem 1.5rem;
+            margin-top: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .tips-strip span {
+            font-size: 0.8rem;
+        }
+
+        .tips-strip i {
+            color: var(--warning);
+            margin-right: 0.5rem;
+        }
+
+        .support-number {
+            font-size: 0.8rem;
         }
 
         /* Empty State */
         .empty-state {
             text-align: center;
-            padding: 2.5rem;
-            color: #94a3b8;
-        }
-
-        .empty-state i {
-            font-size: 3rem;
-            color: #cbd5e1;
-            margin-bottom: 1rem;
-            display: block;
-        }
-
-        /* Tips Section */
-        .tips-section {
-            background: linear-gradient(135deg, #f0f9ff, #eef2ff);
-            border-radius: 20px;
-            padding: 1.25rem;
-            margin-top: 1.5rem;
-            border: 1px solid rgba(37, 99, 235, 0.1);
-        }
-
-        .tips-section h4 {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: #1e293b;
-            margin-bottom: 0.75rem;
-            font-size: 0.9rem;
-        }
-
-        .tips-section ul {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            margin-left: 1.5rem;
-            color: #475569;
-            font-size: 0.8rem;
+            padding: 2rem;
+            color: var(--text-muted);
         }
 
         /* Toast */
@@ -517,59 +604,74 @@ $recommended_doctors = $recommendedStmt->fetchAll(PDO::FETCH_ASSOC);
             position: fixed;
             bottom: 24px;
             right: 24px;
-            background: #1e293b;
-            color: white;
+            background: rgba(18, 22, 33, 0.95);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
             padding: 0.875rem 1.25rem;
-            border-radius: 16px;
+            border-radius: 20px;
             display: none;
             align-items: center;
             gap: 0.75rem;
             z-index: 3000;
-            animation: slideInRight 0.3s ease;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            animation: slideIn 0.3s ease;
         }
 
-        .toast.success { background: #059669; }
-        .toast.error { background: #dc2626; }
-        .toast.show { display: flex; }
+        .toast.show {
+            display: flex;
+        }
 
-        @keyframes slideInRight {
+        @keyframes slideIn {
             from { opacity: 0; transform: translateX(100px); }
             to { opacity: 1; transform: translateX(0); }
         }
 
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .fade-in {
-            animation: fadeInUp 0.5s ease-out;
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .metrics-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .two-columns {
+                grid-template-columns: 1fr;
+            }
+            .doctors-horizontal {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
 
         @media (max-width: 768px) {
             .navbar-container {
                 flex-direction: column;
-                gap: 1rem;
                 padding: 0 1rem;
             }
             .nav-menu {
-                flex-wrap: wrap;
                 justify-content: center;
             }
-            .container { padding: 0 1rem; }
-            .dashboard-grid { grid-template-columns: 1fr; }
-            .welcome-content h2 { font-size: 1.25rem; }
-            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .dashboard-wrapper {
+                padding: 0 1rem;
+            }
+            .metrics-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .doctors-horizontal {
+                grid-template-columns: 1fr;
+            }
+            .top-bar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
         }
     </style>
 </head>
 <body>
+
+    <div class="bg-orb-1"></div>
+    <div class="bg-orb-2"></div>
+
     <nav class="navbar">
         <div class="navbar-container">
             <a href="dashboard.php" class="logo">
-                <i class="fas fa-heartbeat"></i>
-                <span>MediFlow HMS</span>
+                <i class="fas fa-heart-pulse"></i>
+                <span>Hospital System</span>
             </a>
             <ul class="nav-menu">
                 <li><a href="dashboard.php" class="nav-link active"><i class="fas fa-chart-line"></i> Dashboard</a></li>
@@ -582,160 +684,166 @@ $recommended_doctors = $recommendedStmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
     </nav>
 
-    <div class="container">
-        <div class="fade-in">
-            <!-- Welcome Banner -->
-            <div class="welcome-section">
-                <div class="welcome-content">
-                    <h2>Welcome back, <?php echo htmlspecialchars($user_name); ?>!</h2>
-                    <p>Your health journey matters. Track appointments, records, and stay connected with your care team.</p>
-                    <div class="patient-since">
-                        <i class="fas fa-calendar-alt"></i>
-                        Patient since <?php echo date('F Y', strtotime($patient['created_at'])); ?>
-                    </div>
-                </div>
+    <div class="dashboard-wrapper">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="greeting">
+                <h1>Hello, <?php echo htmlspecialchars(explode(' ', $user_name)[0]); ?> <span style="color: var(--primary);">👋</span></h1>
+                <p>Your health dashboard is ready</p>
             </div>
-
-            <!-- Stats Row -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-calendar-week"></i></div>
-                    <div class="stat-number"><?php echo ($stats['pending'] ?? 0) + ($stats['confirmed'] ?? 0); ?></div>
-                    <div class="stat-label">Upcoming Appointments</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
-                    <div class="stat-number"><?php echo $stats['completed'] ?? 0; ?></div>
-                    <div class="stat-label">Visits Completed</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-clock"></i></div>
-                    <div class="stat-number"><?php echo $stats['pending'] ?? 0; ?></div>
-                    <div class="stat-label">Pending Review</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-chart-simple"></i></div>
-                    <div class="stat-number"><?php echo $stats['total'] ?? 0; ?></div>
-                    <div class="stat-label">Total Appointments</div>
-                </div>
+            <div class="date-badge">
+                <i class="fas fa-calendar-alt"></i> 
+                <?php echo date('l, F j, Y'); ?>
             </div>
+        </div>
 
-            <!-- Main Grid -->
-            <div class="dashboard-grid">
-                <!-- Upcoming Appointments -->
-                <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-calendar-alt"></i> Upcoming Visits
-                        <a href="my-appointments.php" class="btn btn-outline btn-sm" style="margin-left: auto;">View all <i class="fas fa-arrow-right"></i></a>
-                    </div>
+        <!-- Metric Cards -->
+        <div class="metrics-row">
+            <div class="metric-card">
+                <div class="metric-header">
+                    <div class="metric-icon"><i class="fas fa-calendar-week"></i></div>
+                </div>
+                <div class="metric-value"><?php echo ($stats['pending'] ?? 0) + ($stats['confirmed'] ?? 0); ?></div>
+                <div class="metric-label">Upcoming Appointments</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-header">
+                    <div class="metric-icon"><i class="fas fa-check-circle"></i></div>
+                </div>
+                <div class="metric-value"><?php echo $stats['completed'] ?? 0; ?></div>
+                <div class="metric-label">Completed Visits</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-header">
+                    <div class="metric-icon"><i class="fas fa-hourglass-half"></i></div>
+                </div>
+                <div class="metric-value"><?php echo $stats['pending'] ?? 0; ?></div>
+                <div class="metric-label">Pending</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-header">
+                    <div class="metric-icon"><i class="fas fa-chart-simple"></i></div>
+                </div>
+                <div class="metric-value"><?php echo $stats['total'] ?? 0; ?></div>
+                <div class="metric-label">Total Appointments</div>
+            </div>
+        </div>
+
+        <!-- Two Column Layout -->
+        <div class="two-columns">
+            <!-- Left Column: Timeline Appointments -->
+            <div class="timeline-card">
+                <div class="card-head">
+                    <h3><i class="fas fa-clock"></i> Upcoming Schedule</h3>
+                    <a href="my-appointments.php" style="color: var(--primary); font-size: 0.75rem; text-decoration: none;">View all →</a>
+                </div>
+                <div class="timeline-list">
                     <?php if (count($upcoming_appointments) > 0): ?>
-                        <div class="table-container">
-                            <table class="data-table">
-                                <thead>
-                                    <tr><th>Doctor</th><th>Specialty</th><th>Date & Time</th><th>Status</th><th></th></tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($upcoming_appointments as $appointment): ?>
-                                    <tr>
-                                        <td><strong><?php echo htmlspecialchars($appointment['doctor_name']); ?></strong><br><small style="color:#64748b;">$<?php echo number_format($appointment['consultation_fee'], 2); ?></small></td>
-                                        <td><?php echo htmlspecialchars($appointment['specialization'] ?? 'General Medicine'); ?></td>
-                                        <td><?php echo date('M d, Y', strtotime($appointment['appointment_date'])); ?><br><small><?php echo date('h:i A', strtotime($appointment['appointment_time'])); ?></small></td>
-                                        <td><span class="badge badge-<?php echo $appointment['status']; ?>"><i class="fas <?php echo $appointment['status'] == 'pending' ? 'fa-hourglass-half' : 'fa-check'; ?>"></i> <?php echo ucfirst($appointment['status']); ?></span></td>
-                                        <td><button onclick="cancelAppointment(<?php echo $appointment['id']; ?>)" class="btn btn-danger btn-sm"><i class="fas fa-times"></i></button></td>
-                                    </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
+                        <?php foreach ($upcoming_appointments as $appointment): ?>
+                            <div class="timeline-item">
+                                <div class="timeline-dot <?php echo $appointment['status']; ?>"></div>
+                                <div class="timeline-content">
+                                    <div class="timeline-title">Dr. <?php echo htmlspecialchars($appointment['doctor_name']); ?></div>
+                                    <div class="timeline-sub"><?php echo htmlspecialchars($appointment['specialization'] ?? 'General Medicine'); ?></div>
+                                </div>
+                                <div class="timeline-time">
+                                    <?php echo date('M d', strtotime($appointment['appointment_date'])); ?> • <?php echo date('h:i A', strtotime($appointment['appointment_time'])); ?>
+                                </div>
+                                <button onclick="cancelAppointment(<?php echo $appointment['id']; ?>)" class="cancel-btn" style="margin-left: 1rem;">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        <?php endforeach; ?>
                     <?php else: ?>
                         <div class="empty-state">
-                            <i class="fas fa-calendar-day"></i>
+                            <i class="fas fa-calendar-day" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
                             <p>No upcoming appointments</p>
-                            <a href="book-appointment.php" class="btn btn-primary" style="margin-top: 0.5rem;"><i class="fas fa-plus"></i> Book Now</a>
+                            <a href="book-appointment.php" class="book-btn" style="margin-top: 0.5rem; display: inline-block;">Book Now</a>
                         </div>
                     <?php endif; ?>
                 </div>
+            </div>
 
-                <!-- Recent Medical Records -->
-                <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-file-medical"></i> Recent Records
-                        <a href="medical-records.php" class="btn btn-outline btn-sm" style="margin-left: auto;">History <i class="fas fa-arrow-right"></i></a>
+            <!-- Right Column: Quick Actions + Records -->
+            <div>
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <a href="book-appointment.php" class="action-btn">
+                        <i class="fas fa-calendar-plus"></i>
+                        <span>Book Appointment</span>
+                    </a>
+                    <a href="medical-records.php" class="action-btn">
+                        <i class="fas fa-folder-open"></i>
+                        <span>View Records</span>
+                    </a>
+                    <a href="profile.php" class="action-btn">
+                        <i class="fas fa-user-edit"></i>
+                        <span>Update Profile</span>
+                    </a>
+                    <a href="#" class="action-btn" onclick="showHelp()">
+                        <i class="fas fa-headset"></i>
+                        <span>Get Help</span>
+                    </a>
+                </div>
+
+                <!-- Recent Records -->
+                <div class="records-list">
+                    <div class="card-head">
+                        <h3><i class="fas fa-file-medical"></i> Recent Medical Records</h3>
+                        <a href="medical-records.php" style="color: var(--primary); font-size: 0.75rem; text-decoration: none;">See all →</a>
                     </div>
                     <?php if (count($recent_records) > 0): ?>
-                        <div class="table-container">
-                            <table class="data-table">
-                                <thead><tr><th>Date</th><th>Diagnosis</th><th>Prescription</th><th></th></tr></thead>
-                                <tbody>
-                                    <?php foreach ($recent_records as $record): ?>
-                                    <tr>
-                                        <td><?php echo date('M d, Y', strtotime($record['record_date'])); ?></td>
-                                        <td><?php echo htmlspecialchars(substr($record['diagnosis'] ?? 'N/A', 0, 40)) . ((strlen($record['diagnosis'] ?? '') > 40) ? '…' : ''); ?></td>
-                                        <td><?php echo htmlspecialchars(substr($record['prescription'] ?? 'N/A', 0, 35)) . ((strlen($record['prescription'] ?? '') > 35) ? '…' : ''); ?></td>
-                                        <td><button class="btn btn-outline btn-sm" onclick="viewRecord(<?php echo $record['id']; ?>)"><i class="fas fa-eye"></i></button></td>
-                                    </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
+                        <?php foreach ($recent_records as $record): ?>
+                            <div class="record-item">
+                                <div class="record-info">
+                                    <h4><?php echo htmlspecialchars(substr($record['diagnosis'] ?? 'Medical Record', 0, 35)); ?></h4>
+                                    <p><?php echo date('F d, Y', strtotime($record['record_date'])); ?></p>
+                                </div>
+                                <button onclick="viewRecord(<?php echo $record['id']; ?>)" class="view-record">
+                                    <i class="fas fa-eye"></i> View
+                                </button>
+                            </div>
+                        <?php endforeach; ?>
                     <?php else: ?>
-                        <div class="empty-state"><i class="fas fa-folder-open"></i><p>No medical records yet</p></div>
+                        <div class="empty-state">
+                            <i class="fas fa-notes-medical" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
+                            <p>No medical records yet</p>
+                        </div>
                     <?php endif; ?>
                 </div>
             </div>
+        </div>
 
-            <!-- Recommended Doctors -->
-            <div class="card" style="margin-bottom: 1.5rem;">
-                <div class="card-header">
-                    <i class="fas fa-user-md"></i> Recommended Specialists
-                    <a href="book-appointment.php" class="btn btn-outline btn-sm" style="margin-left: auto;">Book now <i class="fas fa-calendar-plus"></i></a>
-                </div>
-                <div class="doctor-grid">
-                    <?php foreach ($recommended_doctors as $doctor): ?>
-                        <div class="doctor-item">
-                            <div class="doctor-info">
-                                <div class="doctor-avatar"><?php echo strtoupper(substr($doctor['full_name'], 0, 1)); ?></div>
-                                <div class="doctor-details">
-                                    <h4>Dr. <?php echo htmlspecialchars($doctor['full_name']); ?></h4>
-                                    <p><i class="fas fa-stethoscope"></i> <?php echo htmlspecialchars($doctor['specialization']); ?></p>
-                                    <p><i class="fas fa-dollar-sign"></i> $<?php echo number_format($doctor['consultation_fee'], 2); ?> | <i class="fas fa-star" style="color:#f59e0b;"></i> <?php echo $doctor['appointment_count'] ?? 0; ?> consultations</p>
-                                </div>
-                            </div>
-                            <a href="book-appointment.php?doctor_id=<?php echo $doctor['id']; ?>" class="btn btn-primary btn-sm"><i class="fas fa-calendar-check"></i> Book</a>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
+       
+        <!-- Tips Strip -->
+        <div class="tips-strip">
+            <div>
+                <i class="fas fa-lightbulb"></i> <span>Quick Tip: Schedule follow-ups 2 weeks in advance for better availability</span>
             </div>
-
-            <!-- Helpful Tips -->
-            <div class="tips-section">
-                <h4><i class="fas fa-lightbulb" style="color:#f59e0b;"></i> Patient Quick Guide</h4>
-                <ul>
-                    <li><i class="fas fa-check-circle" style="color:#10b981;"></i> Book appointments with top specialists</li>
-                    <li><i class="fas fa-clock" style="color:#3b82f6;"></i> Cancel at least 24h before visit</li>
-                    <li><i class="fas fa-lock" style="color:#8b5cf6;"></i> Your medical data is fully secure</li>
-                    <li><i class="fas fa-phone-alt" style="color:#ec4898;"></i> 24/7 Support: (555) 123-4567</li>
-                </ul>
+            <div class="support-number">
+                <i class="fas fa-phone-alt"></i> Emergency: <strong style="color: var(--primary);">+1 (555) 123-4567</strong>
             </div>
         </div>
     </div>
 
-    <!-- Toast -->
-    <div id="toast" class="toast"><i class="fas"></i><span id="toastMessage"></span></div>
+    <div id="toast" class="toast">
+        <i class="fas"></i>
+        <span id="toastMsg"></span>
+    </div>
 
     <script>
-        function showToast(message, type = 'success') {
+        function showToast(msg, type = 'success') {
             const toast = document.getElementById('toast');
-            const toastMessage = document.getElementById('toastMessage');
+            const toastMsg = document.getElementById('toastMsg');
             const icon = toast.querySelector('.fas');
-            toastMessage.textContent = message;
-            toast.classList.add('show', type);
+            toastMsg.innerText = msg;
+            toast.classList.add('show');
             icon.className = type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-triangle';
-            setTimeout(() => toast.classList.remove('show', type), 3500);
+            setTimeout(() => toast.classList.remove('show'), 3500);
         }
 
         function cancelAppointment(id) {
-            if (confirm('Cancel this appointment? This action cannot be undone.')) {
+            if (confirm('Cancel this appointment? This cannot be undone.')) {
                 fetch('../api/cancel-appointment.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -744,18 +852,22 @@ $recommended_doctors = $recommendedStmt->fetchAll(PDO::FETCH_ASSOC);
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
-                        showToast('Appointment cancelled successfully', 'success');
+                        showToast('Appointment cancelled', 'success');
                         setTimeout(() => location.reload(), 1200);
                     } else {
-                        showToast(data.message || 'Cancellation failed', 'error');
+                        showToast(data.message || 'Failed to cancel', 'error');
                     }
                 })
                 .catch(() => showToast('Network error', 'error'));
             }
         }
 
-        function viewRecord(recordId) {
-            window.location.href = `view-record.php?id=${recordId}`;
+        function viewRecord(id) {
+            window.location.href = `view-record.php?id=${id}`;
+        }
+
+        function showHelp() {
+            showToast('Call support: +1 (555) 123-4567', 'success');
         }
     </script>
 </body>

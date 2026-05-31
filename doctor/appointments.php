@@ -1,9 +1,8 @@
 <?php
-// doctor/appointments.php - Manage appointments with modern medical UI
+// doctor/appointments.php - Completely Redesigned Appointments Manager
 require_once '../config/database.php';
 require_once '../includes/SessionManager.php';
 
-// Start session and check doctor role
 SessionManager::startSession();
 SessionManager::requireRole('doctor');
 
@@ -30,7 +29,7 @@ $search = isset($_GET['search']) ? $_GET['search'] : '';
 
 // Pagination
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$limit = 12;
+$limit = 10;
 $offset = ($page - 1) * $limit;
 
 // Build count query for pagination
@@ -113,33 +112,82 @@ $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Appointments | MediFlow HMS - Doctor Portal</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
+        :root {
+            --bg-main: #0A0C15;
+            --surface-card: rgba(18, 22, 33, 0.75);
+            --border-color: rgba(255, 255, 255, 0.06);
+            --text-main: #F3F4F6;
+            --text-muted: #9CA3AF;
+            --primary: #0EA5E9;
+            --primary-dark: #0284C7;
+            --primary-glow: rgba(14, 165, 233, 0.2);
+            --accent: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --info: #3B82F6;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
+            background: var(--bg-main);
+            color: var(--text-main);
             min-height: 100vh;
+            position: relative;
         }
 
-        /* Modern Navbar */
+        .bg-orb-1 {
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            top: -100px;
+            right: -100px;
+            background: radial-gradient(circle, rgba(14, 165, 233, 0.12) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .bg-orb-2 {
+            position: fixed;
+            width: 500px;
+            height: 500px;
+            bottom: -150px;
+            left: -150px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.06) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+            animation: float 25s ease-in-out infinite reverse;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(30px, -30px); }
+        }
+
         .navbar {
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-            padding: 0.75rem 0;
             position: sticky;
             top: 0;
-            z-index: 1000;
-            border-bottom: 1px solid rgba(37, 99, 235, 0.1);
+            z-index: 100;
+            background: rgba(10, 12, 21, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.75rem 0;
         }
 
         .navbar-container {
@@ -149,135 +197,119 @@ $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
 
         .logo {
-            font-size: 1.5rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #1e3a5f, #2563eb);
+            font-size: 1.4rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #FFF, var(--primary));
             -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
+            -webkit-text-fill-color: transparent;
             text-decoration: none;
             display: flex;
             align-items: center;
             gap: 0.5rem;
-        }
-
-        .logo i {
-            background: linear-gradient(135deg, #1e3a5f, #2563eb);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
         }
 
         .nav-menu {
             display: flex;
             gap: 0.5rem;
             list-style: none;
-            align-items: center;
+            flex-wrap: wrap;
         }
 
         .nav-link {
             text-decoration: none;
-            color: #475569;
+            color: var(--text-muted);
             font-weight: 500;
             transition: all 0.3s;
             padding: 0.5rem 1rem;
             border-radius: 12px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
 
         .nav-link:hover, .nav-link.active {
-            color: #2563eb;
-            background: #eff6ff;
+            color: var(--primary);
+            background: rgba(14, 165, 233, 0.1);
         }
 
-        /* Main Container */
-        .container {
+        .appointments-wrapper {
+            position: relative;
+            z-index: 2;
             max-width: 1400px;
-            margin: 2rem auto;
+            margin: 1.5rem auto;
             padding: 0 2rem;
         }
 
-        /* Page Header */
-        .page-header {
+        /* Top Bar */
+        .top-bar {
             margin-bottom: 2rem;
         }
 
-        .page-header h1 {
-            font-size: 1.875rem;
+        .top-bar h1 {
+            font-size: 1.8rem;
             font-weight: 700;
-            color: #1e293b;
-            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #FFF, var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .top-bar p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+        }
+
+        /* Stats Row */
+        .stats-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .stat-pill {
+            background: rgba(18, 22, 33, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 40px;
+            padding: 0.6rem 1.2rem;
             display: flex;
             align-items: center;
             gap: 0.75rem;
+            transition: all 0.2s;
         }
 
-        .page-header h1 i {
-            background: linear-gradient(135deg, #2563eb, #3b82f6);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
+        .stat-pill:hover {
+            border-color: var(--primary);
         }
 
-        .page-header p {
-            color: #64748b;
+        .stat-pill i {
+            font-size: 1.1rem;
+            color: var(--primary);
         }
 
-        /* Stats Grid */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 1rem;
-            border-radius: 20px;
-            transition: all 0.3s;
-            border: 1px solid rgba(37, 99, 235, 0.08);
-            text-align: center;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.1);
-        }
-
-        .stat-value {
-            font-size: 1.75rem;
+        .stat-pill .count {
             font-weight: 800;
-            color: #1e293b;
-            line-height: 1;
+            font-size: 1.1rem;
         }
 
-        .stat-label {
+        .stat-pill .label {
             font-size: 0.7rem;
-            color: #64748b;
-            margin-top: 0.25rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .stat-icon {
-            font-size: 1.25rem;
-            margin-bottom: 0.5rem;
+            color: var(--text-muted);
         }
 
         /* Filters Bar */
-        .filters-bar {
-            background: white;
-            padding: 1.25rem;
-            border-radius: 24px;
+        .filters-card {
+            background: rgba(18, 22, 33, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 28px;
+            padding: 1.25rem 1.5rem;
             margin-bottom: 1.5rem;
-            border: 1px solid rgba(37, 99, 235, 0.08);
         }
 
         .filters {
@@ -294,35 +326,32 @@ $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
         }
 
         .filter-group label {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             font-weight: 600;
-            color: #64748b;
+            color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
-        .filter-select, .search-input, .filter-date {
+        .filter-select, .filter-date, .search-input {
             padding: 0.6rem 1rem;
-            border: 1.5px solid #e2e8f0;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
             border-radius: 14px;
             font-size: 0.85rem;
+            color: var(--text-main);
             font-family: inherit;
-            background: #f8fafc;
-            transition: all 0.2s;
         }
 
-        .filter-select:focus, .search-input:focus, .filter-date:focus {
+        .filter-select:focus, .filter-date:focus, .search-input:focus {
             outline: none;
-            border-color: #2563eb;
-            background: white;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+            border-color: var(--primary);
         }
 
         .search-input {
             min-width: 260px;
         }
 
-        /* Buttons */
         .btn {
             padding: 0.6rem 1.2rem;
             border: none;
@@ -337,183 +366,179 @@ $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 14px rgba(37, 99, 235, 0.3);
+            filter: brightness(1.05);
         }
 
         .btn-outline {
             background: transparent;
-            border: 1.5px solid #2563eb;
-            color: #2563eb;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
         }
 
         .btn-outline:hover {
-            background: #eff6ff;
+            border-color: var(--primary);
+            color: var(--primary);
         }
 
-        .btn-sm {
-            padding: 0.4rem 0.8rem;
-            font-size: 0.7rem;
-        }
-
-        /* Appointment Cards */
-        .appointments-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 1.25rem;
-        }
-
-        .appointment-card {
-            background: white;
-            border-radius: 24px;
+        /* Table Style Appointments */
+        .appointments-table-container {
+            background: rgba(18, 22, 33, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 28px;
             overflow: hidden;
-            border: 1px solid rgba(37, 99, 235, 0.08);
-            transition: all 0.3s;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
         }
 
-        .appointment-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 24px -12px rgba(0, 0, 0, 0.12);
+        .appointments-table {
+            width: 100%;
+            border-collapse: collapse;
         }
 
-        .card-header {
-            background: linear-gradient(135deg, #f8fafc, #ffffff);
-            padding: 1rem;
-            border-bottom: 1px solid #eef2ff;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .appointments-table th {
+            text-align: left;
+            padding: 1rem 1rem;
+            background: rgba(14, 165, 233, 0.05);
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border-color);
         }
 
-        .patient-info {
+        .appointments-table td {
+            padding: 1rem 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            vertical-align: middle;
+        }
+
+        .appointments-table tr:hover td {
+            background: rgba(14, 165, 233, 0.05);
+        }
+
+        .patient-cell {
             display: flex;
             align-items: center;
             gap: 0.75rem;
         }
 
         .patient-avatar {
-            width: 48px;
-            height: 48px;
-            background: linear-gradient(135deg, #2563eb, #3b82f6);
-            border-radius: 18px;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-size: 1.1rem;
             font-weight: 700;
         }
 
-        .patient-details h3 {
-            font-size: 1rem;
-            font-weight: 700;
-            color: #1e293b;
-            margin-bottom: 0.25rem;
+        .patient-name {
+            font-weight: 600;
+            margin-bottom: 0.2rem;
         }
 
-        .patient-details p {
-            font-size: 0.7rem;
-            color: #64748b;
+        .patient-email {
+            font-size: 0.65rem;
+            color: var(--text-muted);
         }
 
-        .date-badge {
-            text-align: right;
-            font-size: 0.7rem;
-            color: #2563eb;
-            font-weight: 500;
+        .date-cell {
+            font-size: 0.85rem;
         }
 
-        .card-body {
-            padding: 1rem;
+        .date-cell small {
+            font-size: 0.65rem;
+            color: var(--text-muted);
         }
 
-        .info-row {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.5rem 0;
-            border-bottom: 1px solid #f1f5f9;
-            font-size: 0.8rem;
-        }
-
-        .info-row:last-child {
-            border-bottom: none;
-        }
-
-        .info-row i {
-            width: 24px;
-            color: #2563eb;
-        }
-
-        .symptoms {
-            background: #f8fafc;
-            padding: 0.5rem;
-            border-radius: 12px;
-            margin-top: 0.5rem;
-            font-size: 0.75rem;
-            color: #475569;
-        }
-
-        .card-footer {
-            padding: 1rem;
-            background: #fafcff;
-            border-top: 1px solid #eef2ff;
-            display: flex;
-            gap: 0.75rem;
-            justify-content: flex-end;
-        }
-
-        /* Badges */
-        .badge {
+        .status-badge {
             display: inline-flex;
             align-items: center;
+            gap: 0.3rem;
             padding: 0.25rem 0.75rem;
             border-radius: 40px;
             font-size: 0.65rem;
             font-weight: 600;
-            gap: 0.3rem;
         }
 
-        .badge-pending {
-            background: #fef3c7;
-            color: #d97706;
-        }
+        .status-pending { background: rgba(245, 158, 11, 0.15); color: #FBBF24; }
+        .status-confirmed { background: rgba(14, 165, 233, 0.15); color: #7DD3FC; }
+        .status-completed { background: rgba(16, 185, 129, 0.15); color: #34D399; }
+        .status-cancelled { background: rgba(239, 68, 68, 0.15); color: #F87171; }
 
-        .badge-confirmed {
-            background: #dbeafe;
-            color: #2563eb;
-        }
-
-        .badge-completed {
-            background: #d1fae5;
-            color: #059669;
-        }
-
-        .badge-cancelled {
-            background: #fee2e2;
-            color: #dc2626;
-        }
-
-        /* Status Select */
         .status-select {
             padding: 0.4rem 0.6rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
             border-radius: 12px;
-            border: 1.5px solid #e2e8f0;
+            color: var(--text-main);
             font-size: 0.7rem;
-            font-family: inherit;
             cursor: pointer;
-            background: white;
         }
 
-        .status-select:focus {
-            outline: none;
-            border-color: #2563eb;
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-icon {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-icon:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+            padding: 1rem;
+        }
+
+        .page-link {
+            padding: 0.5rem 0.9rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .page-link:hover, .page-link.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            opacity: 0.5;
+            margin-bottom: 1rem;
         }
 
         /* Modal */
@@ -524,7 +549,7 @@ $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.7);
             backdrop-filter: blur(4px);
             z-index: 2000;
             align-items: center;
@@ -536,24 +561,21 @@ $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
         }
 
         .modal-content {
-            background: white;
+            background: rgba(18, 22, 33, 0.95);
+            border: 1px solid var(--border-color);
             border-radius: 32px;
             max-width: 550px;
             width: 90%;
             animation: modalSlideIn 0.3s ease;
-            max-height: 85vh;
-            overflow-y: auto;
         }
 
         .modal-header {
             padding: 1.25rem 1.5rem;
-            border-bottom: 1px solid #eef2ff;
+            border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
             font-weight: 700;
-            font-size: 1.1rem;
-            color: #1e293b;
         }
 
         .modal-body {
@@ -562,88 +584,27 @@ $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
 
         .modal-footer {
             padding: 1rem 1.5rem;
-            border-top: 1px solid #eef2ff;
+            border-top: 1px solid var(--border-color);
             display: flex;
             justify-content: flex-end;
-            gap: 0.75rem;
-        }
-
-        .close-modal {
-            cursor: pointer;
-            font-size: 1.5rem;
-            color: #94a3b8;
-            transition: color 0.2s;
-        }
-
-        .close-modal:hover {
-            color: #dc2626;
         }
 
         .detail-row {
             display: flex;
             padding: 0.7rem 0;
-            border-bottom: 1px solid #f1f5f9;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .detail-label {
+            width: 110px;
             font-weight: 600;
-            width: 120px;
-            color: #475569;
-            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-size: 0.75rem;
         }
 
         .detail-value {
             flex: 1;
-            color: #1e293b;
             font-size: 0.85rem;
-        }
-
-        /* Empty State */
-        .empty-state {
-            text-align: center;
-            padding: 3rem;
-            background: white;
-            border-radius: 24px;
-            color: #94a3b8;
-        }
-
-        .empty-state i {
-            font-size: 3rem;
-            color: #cbd5e1;
-            margin-bottom: 1rem;
-            display: block;
-        }
-
-        /* Pagination */
-        .pagination {
-            display: flex;
-            justify-content: center;
-            gap: 0.5rem;
-            margin-top: 2rem;
-            flex-wrap: wrap;
-        }
-
-        .page-link {
-            padding: 0.5rem 1rem;
-            border: 1px solid #e2e8f0;
-            background: white;
-            border-radius: 12px;
-            text-decoration: none;
-            color: #475569;
-            transition: all 0.2s;
-            font-size: 0.8rem;
-        }
-
-        .page-link:hover {
-            background: #2563eb;
-            color: white;
-            border-color: #2563eb;
-        }
-
-        .page-link.active {
-            background: #2563eb;
-            color: white;
-            border-color: #2563eb;
         }
 
         /* Toast */
@@ -651,10 +612,11 @@ $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
             position: fixed;
             bottom: 24px;
             right: 24px;
-            background: #1e293b;
-            color: white;
+            background: rgba(18, 22, 33, 0.95);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
             padding: 0.875rem 1.25rem;
-            border-radius: 16px;
+            border-radius: 20px;
             display: none;
             align-items: center;
             gap: 0.75rem;
@@ -662,9 +624,9 @@ $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
             animation: slideInRight 0.3s ease;
         }
 
-        .toast.success { background: #059669; }
-        .toast.error { background: #dc2626; }
         .toast.show { display: flex; }
+        .toast.success { border-left: 3px solid var(--accent); }
+        .toast.error { border-left: 3px solid var(--danger); }
 
         @keyframes modalSlideIn {
             from { opacity: 0; transform: translateY(-30px); }
@@ -676,28 +638,11 @@ $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
             to { opacity: 1; transform: translateX(0); }
         }
 
-        .fade-in {
-            animation: fadeInUp 0.5s ease-out;
-        }
-
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
         /* Responsive */
-        @media (max-width: 768px) {
-            .navbar-container {
-                flex-direction: column;
-                gap: 1rem;
-                padding: 0 1rem;
-            }
-            .nav-menu {
-                flex-wrap: wrap;
-                justify-content: center;
-            }
-            .container {
-                padding: 0 1rem;
+        @media (max-width: 1000px) {
+            .appointments-table {
+                display: block;
+                overflow-x: auto;
             }
             .filters {
                 flex-direction: column;
@@ -708,21 +653,38 @@ $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
             .search-input {
                 width: 100%;
             }
-            .appointments-grid {
-                grid-template-columns: 1fr;
+        }
+
+        @media (max-width: 768px) {
+            .navbar-container {
+                flex-direction: column;
+                padding: 0 1rem;
             }
-            .page-header h1 {
-                font-size: 1.5rem;
+            .nav-menu {
+                justify-content: center;
+            }
+            .appointments-wrapper {
+                padding: 0 1rem;
+            }
+            .stats-row {
+                justify-content: center;
+            }
+            .action-buttons {
+                flex-direction: column;
             }
         }
     </style>
 </head>
 <body>
+
+    <div class="bg-orb-1"></div>
+    <div class="bg-orb-2"></div>
+
     <nav class="navbar">
         <div class="navbar-container">
             <a href="dashboard.php" class="logo">
-                <i class="fas fa-heartbeat"></i>
-                <span>MediFlow HMS</span>
+                <i class="fas fa-heart-pulse"></i>
+                <span>Hospital System</span>
             </a>
             <ul class="nav-menu">
                 <li><a href="dashboard.php" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a></li>
@@ -735,26 +697,25 @@ $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
         </div>
     </nav>
 
-    <div class="container">
-        <div class="fade-in">
-            <!-- Page Header -->
-            <div class="page-header">
-                <h1><i class="fas fa-calendar-alt"></i> Appointment Manager</h1>
-                <p>View and manage all your patient appointments in one place</p>
-            </div>
+    <div class="appointments-wrapper">
+        <div class="top-bar">
+            <h1><i class="fas fa-calendar-alt"></i> Appointment Manager</h1>
+            <p>View and manage all your patient consultations</p>
+        </div>
 
-            <!-- Stats Cards -->
-            <div class="stats-grid">
-                <div class="stat-card"><div class="stat-icon">📋</div><div class="stat-value"><?php echo $stats['total']; ?></div><div class="stat-label">Total</div></div>
-                <div class="stat-card"><div class="stat-icon">⏳</div><div class="stat-value"><?php echo $stats['pending']; ?></div><div class="stat-label">Pending</div></div>
-                <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-value"><?php echo $stats['confirmed']; ?></div><div class="stat-label">Confirmed</div></div>
-                <div class="stat-card"><div class="stat-icon">✔️</div><div class="stat-value"><?php echo $stats['completed']; ?></div><div class="stat-label">Completed</div></div>
-                <div class="stat-card"><div class="stat-icon">❌</div><div class="stat-value"><?php echo $stats['cancelled']; ?></div><div class="stat-label">Cancelled</div></div>
-            </div>
+        <!-- Stats Pills -->
+        <div class="stats-row">
+            <div class="stat-pill"><i class="fas fa-list"></i><span class="count"><?php echo $stats['total']; ?></span><span class="label">Total</span></div>
+            <div class="stat-pill"><i class="fas fa-hourglass-half"></i><span class="count"><?php echo $stats['pending']; ?></span><span class="label">Pending</span></div>
+            <div class="stat-pill"><i class="fas fa-check-circle"></i><span class="count"><?php echo $stats['confirmed']; ?></span><span class="label">Confirmed</span></div>
+            <div class="stat-pill"><i class="fas fa-check-double"></i><span class="count"><?php echo $stats['completed']; ?></span><span class="label">Completed</span></div>
+            <div class="stat-pill"><i class="fas fa-ban"></i><span class="count"><?php echo $stats['cancelled']; ?></span><span class="label">Cancelled</span></div>
+        </div>
 
-            <!-- Filters -->
-            <div class="filters-bar">
-                <form method="GET" action="" class="filters" id="filterForm">
+        <!-- Filters -->
+        <div class="filters-card">
+            <form method="GET" action="" id="filterForm">
+                <div class="filters">
                     <div class="filter-group">
                         <label><i class="fas fa-filter"></i> Status</label>
                         <select name="status" class="filter-select" onchange="this.form.submit()">
@@ -779,85 +740,90 @@ $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
                             <?php endif; ?>
                         </div>
                     </div>
-                </form>
+                </div>
+            </form>
+        </div>
+
+        <!-- Appointments Table -->
+        <?php if (count($appointments) > 0): ?>
+            <div class="appointments-table-container">
+                <table class="appointments-table">
+                    <thead>
+                        <tr><th>Patient</th><th>Date & Time</th><th>Contact</th><th>Status</th><th>Symptoms</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($appointments as $appointment): ?>
+                            <tr>
+                                <td>
+                                    <div class="patient-cell">
+                                        <div class="patient-avatar"><?php echo strtoupper(substr($appointment['patient_name'], 0, 1)); ?></div>
+                                        <div>
+                                            <div class="patient-name"><?php echo htmlspecialchars($appointment['patient_name']); ?></div>
+                                            <div class="patient-email">ID: #<?php echo $appointment['patient_id']; ?></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="date-cell">
+                                    <?php echo date('M d, Y', strtotime($appointment['appointment_date'])); ?>
+                                    <br><small><?php echo date('h:i A', strtotime($appointment['appointment_time'])); ?></small>
+                                </td>
+                                <td>
+                                    <div style="font-size: 0.75rem;">📞 <?php echo htmlspecialchars($appointment['phone'] ?? 'N/A'); ?></div>
+                                    <div style="font-size: 0.7rem; color: var(--text-muted);">✉️ <?php echo htmlspecialchars($appointment['email']); ?></div>
+                                </td>
+                                <td>
+                                    <span class="status-badge status-<?php echo $appointment['status']; ?>">
+                                        <i class="fas <?php echo $appointment['status'] == 'pending' ? 'fa-clock' : ($appointment['status'] == 'confirmed' ? 'fa-check' : ($appointment['status'] == 'completed' ? 'fa-check-double' : 'fa-ban')); ?>"></i>
+                                        <?php echo ucfirst($appointment['status']); ?>
+                                    </span>
+                                </td>
+                                <td style="max-width: 200px;">
+                                    <div style="font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                        <?php echo htmlspecialchars(substr($appointment['symptoms'] ?? 'No symptoms', 0, 40)); ?>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <select class="status-select" onchange="updateStatus(<?php echo $appointment['id']; ?>, this.value)">
+                                            <option value="pending" <?php echo $appointment['status'] == 'pending' ? 'selected' : ''; ?>>📋 Pending</option>
+                                            <option value="confirmed" <?php echo $appointment['status'] == 'confirmed' ? 'selected' : ''; ?>>✅ Confirm</option>
+                                            <option value="completed" <?php echo $appointment['status'] == 'completed' ? 'selected' : ''; ?>>✔️ Complete</option>
+                                            <option value="cancelled" <?php echo $appointment['status'] == 'cancelled' ? 'selected' : ''; ?>>❌ Cancel</option>
+                                        </select>
+                                        <button onclick="viewDetails(<?php echo $appointment['id']; ?>)" class="btn-icon" title="View Details"><i class="fas fa-eye"></i></button>
+                                        <?php if ($appointment['status'] != 'completed' && $appointment['status'] != 'cancelled'): ?>
+                                            <button onclick="startConsultation(<?php echo $appointment['id']; ?>)" class="btn-icon" title="Start Consultation"><i class="fas fa-stethoscope"></i></button>
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
             </div>
 
-            <!-- Appointments Grid -->
-            <?php if (count($appointments) > 0): ?>
-                <div class="appointments-grid">
-                    <?php foreach ($appointments as $appointment): ?>
-                        <div class="appointment-card">
-                            <div class="card-header">
-                                <div class="patient-info">
-                                    <div class="patient-avatar">
-                                        <?php echo strtoupper(substr($appointment['patient_name'], 0, 1)); ?>
-                                    </div>
-                                    <div class="patient-details">
-                                        <h3><?php echo htmlspecialchars($appointment['patient_name']); ?></h3>
-                                        <p><?php echo htmlspecialchars($appointment['email']); ?></p>
-                                    </div>
-                                </div>
-                                <div class="date-badge">
-                                    <?php echo date('M d', strtotime($appointment['appointment_date'])); ?>
-                                </div>
-                            </div>
-                            <div class="card-body">
-                                <div class="info-row">
-                                    <i class="fas fa-calendar-day"></i>
-                                    <span><?php echo date('l, F j, Y', strtotime($appointment['appointment_date'])); ?></span>
-                                </div>
-                                <div class="info-row">
-                                    <i class="fas fa-clock"></i>
-                                    <span><?php echo date('h:i A', strtotime($appointment['appointment_time'])); ?></span>
-                                </div>
-                                <div class="info-row">
-                                    <i class="fas fa-phone"></i>
-                                    <span><?php echo htmlspecialchars($appointment['phone'] ?? 'N/A'); ?></span>
-                                </div>
-                                <div class="symptoms">
-                                    <i class="fas fa-notes-medical" style="margin-right: 0.5rem;"></i>
-                                    <?php echo htmlspecialchars(substr($appointment['symptoms'] ?? 'No symptoms noted', 0, 80)) . ((strlen($appointment['symptoms'] ?? '') > 80) ? '...' : ''); ?>
-                                </div>
-                            </div>
-                            <div class="card-footer">
-                                <select class="status-select" onchange="updateStatus(<?php echo $appointment['id']; ?>, this.value)">
-                                    <option value="pending" <?php echo $appointment['status'] == 'pending' ? 'selected' : ''; ?>>📋 Pending</option>
-                                    <option value="confirmed" <?php echo $appointment['status'] == 'confirmed' ? 'selected' : ''; ?>>✅ Confirmed</option>
-                                    <option value="completed" <?php echo $appointment['status'] == 'completed' ? 'selected' : ''; ?>>✔️ Completed</option>
-                                    <option value="cancelled" <?php echo $appointment['status'] == 'cancelled' ? 'selected' : ''; ?>>❌ Cancelled</option>
-                                </select>
-                                <button onclick="viewDetails(<?php echo $appointment['id']; ?>)" class="btn btn-outline btn-sm"><i class="fas fa-eye"></i> View</button>
-                                <?php if ($appointment['status'] != 'completed' && $appointment['status'] != 'cancelled'): ?>
-                                    <button onclick="startConsultation(<?php echo $appointment['id']; ?>)" class="btn btn-primary btn-sm"><i class="fas fa-stethoscope"></i> Consult</button>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-
-                <!-- Pagination -->
-                <?php if ($total_pages > 1): ?>
-                    <div class="pagination">
-                        <?php if ($page > 1): ?>
-                            <a href="?page=<?php echo $page-1; ?>&status=<?php echo $status_filter; ?>&date=<?php echo $date_filter; ?>&search=<?php echo urlencode($search); ?>" class="page-link"><i class="fas fa-chevron-left"></i> Prev</a>
-                        <?php endif; ?>
-                        <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                            <a href="?page=<?php echo $i; ?>&status=<?php echo $status_filter; ?>&date=<?php echo $date_filter; ?>&search=<?php echo urlencode($search); ?>" class="page-link <?php echo $i == $page ? 'active' : ''; ?>"><?php echo $i; ?></a>
-                        <?php endfor; ?>
-                        <?php if ($page < $total_pages): ?>
-                            <a href="?page=<?php echo $page+1; ?>&status=<?php echo $status_filter; ?>&date=<?php echo $date_filter; ?>&search=<?php echo urlencode($search); ?>" class="page-link">Next <i class="fas fa-chevron-right"></i></a>
-                        <?php endif; ?>
-                    </div>
-                <?php endif; ?>
-            <?php else: ?>
-                <div class="empty-state">
-                    <i class="fas fa-calendar-times"></i>
-                    <h3>No Appointments Found</h3>
-                    <p>No appointments match your search criteria.</p>
-                    <a href="appointments.php" class="btn btn-primary" style="margin-top: 1rem;"><i class="fas fa-sync-alt"></i> Clear Filters</a>
+            <!-- Pagination -->
+            <?php if ($total_pages > 1): ?>
+                <div class="pagination">
+                    <?php if ($page > 1): ?>
+                        <a href="?page=<?php echo $page-1; ?>&status=<?php echo $status_filter; ?>&date=<?php echo $date_filter; ?>&search=<?php echo urlencode($search); ?>" class="page-link"><i class="fas fa-chevron-left"></i></a>
+                    <?php endif; ?>
+                    <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                        <a href="?page=<?php echo $i; ?>&status=<?php echo $status_filter; ?>&date=<?php echo $date_filter; ?>&search=<?php echo urlencode($search); ?>" class="page-link <?php echo $i == $page ? 'active' : ''; ?>"><?php echo $i; ?></a>
+                    <?php endfor; ?>
+                    <?php if ($page < $total_pages): ?>
+                        <a href="?page=<?php echo $page+1; ?>&status=<?php echo $status_filter; ?>&date=<?php echo $date_filter; ?>&search=<?php echo urlencode($search); ?>" class="page-link"><i class="fas fa-chevron-right"></i></a>
+                    <?php endif; ?>
                 </div>
             <?php endif; ?>
-        </div>
+        <?php else: ?>
+            <div class="empty-state">
+                <i class="fas fa-calendar-times"></i>
+                <h3>No Appointments Found</h3>
+                <p>No appointments match your search criteria.</p>
+                <a href="appointments.php" class="btn btn-primary" style="margin-top: 1rem;"><i class="fas fa-sync-alt"></i> Clear Filters</a>
+            </div>
+        <?php endif; ?>
     </div>
 
     <!-- Modal -->
@@ -865,7 +831,7 @@ $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
         <div class="modal-content">
             <div class="modal-header">
                 <span><i class="fas fa-calendar-check"></i> Appointment Details</span>
-                <span class="close-modal" onclick="closeModal()">&times;</span>
+                <span class="close-modal" onclick="closeModal()" style="cursor: pointer; font-size: 1.5rem;">&times;</span>
             </div>
             <div class="modal-body" id="appointmentDetails"></div>
             <div class="modal-footer">
@@ -878,6 +844,10 @@ $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
     <div id="toast" class="toast"><i class="fas"></i><span id="toastMessage"></span></div>
 
     <script>
+        // Set doctor theme
+        document.documentElement.style.setProperty('--primary', '#0EA5E9');
+        document.documentElement.style.setProperty('--primary-dark', '#0284C7');
+
         function updateStatus(id, status) {
             fetch('../api/update-status.php', {
                 method: 'POST',
@@ -888,13 +858,12 @@ $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
             .then(data => {
                 if (data.success) {
                     showToast('Status updated successfully', 'success');
-                    setTimeout(() => location.reload(), 1000);
+                    setTimeout(() => location.reload(), 800);
                 } else {
                     showToast('Failed to update status', 'error');
-                    location.reload();
                 }
             })
-            .catch(() => { showToast('Error updating status', 'error'); location.reload(); });
+            .catch(() => showToast('Error updating status', 'error'));
         }
 
         function viewDetails(id) {
@@ -911,7 +880,7 @@ $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
                             <div class="detail-row"><div class="detail-label">Address:</div><div class="detail-value">${data.address || 'N/A'}</div></div>
                             <div class="detail-row"><div class="detail-label">Date:</div><div class="detail-value">${data.appointment_date}</div></div>
                             <div class="detail-row"><div class="detail-label">Time:</div><div class="detail-value">${data.appointment_time}</div></div>
-                            <div class="detail-row"><div class="detail-label">Status:</div><div class="detail-value"><span class="badge badge-${data.status}">${data.status}</span></div></div>
+                            <div class="detail-row"><div class="detail-label">Status:</div><div class="detail-value"><span class="status-badge status-${data.status}">${data.status}</span></div></div>
                             <div class="detail-row"><div class="detail-label">Symptoms:</div><div class="detail-value">${data.symptoms || 'No symptoms noted'}</div></div>
                             <div class="detail-row"><div class="detail-label">Notes:</div><div class="detail-value">${data.notes || 'No additional notes'}</div></div>
                         `;

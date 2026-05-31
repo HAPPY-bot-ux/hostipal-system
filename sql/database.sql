@@ -112,76 +112,86 @@ CREATE TABLE system_logs (
 );
 
 -- ============================================
--- INSERT DEFAULT USERS WITH PASSWORD: password123
+-- NEW DEFAULT USERS (All passwords: SecurePass123!)
 -- ============================================
 
--- Admin User
+-- Admin Users
 INSERT INTO users (username, email, password, full_name, phone, address, role, is_active, email_verified) VALUES 
-('admin', 'admin@hospital.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'System Administrator', '555-0100', 'Administration Office, Hospital Main Building', 'admin', 1, 1);
+('superadmin', 'superadmin@medflow.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Dr. Sarah Johnson', '555-0001', 'Executive Office, Medical Tower Level 5', 'admin', 1, 1),
+('itadmin', 'itadmin@medflow.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Michael Chen', '555-0002', 'IT Department, Technology Wing', 'admin', 1, 1);
 
--- Doctor Users
+-- Doctor Users (NEW)
 INSERT INTO users (username, email, password, full_name, phone, address, role, is_active, email_verified) VALUES 
-('dr.smith', 'dr.smith@hospital.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Dr. John Smith', '555-0101', 'Cardiology Department, 2nd Floor', 'doctor', 1, 1),
-('dr.johnson', 'dr.johnson@hospital.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Dr. Emily Johnson', '555-0102', 'Pediatrics Department, 1st Floor', 'doctor', 1, 1),
-('dr.williams', 'dr.williams@hospital.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Dr. Michael Williams', '555-0103', 'Neurology Department, 3rd Floor', 'doctor', 1, 1),
-('KB', 'kb.ndlovu@hospital.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Dr. K.B. Ndlovu', '555-0109', 'Cardiology Department, Suite 204', 'doctor', 1, 1);
+('dr.patel', 'dr.patel@medflow.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Dr. Priya Patel', '555-1001', 'Cardiology Dept, Room 204', 'doctor', 1, 1),
+('dr.martinez', 'dr.martinez@medflow.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Dr. Carlos Martinez', '555-1002', 'Pediatrics Dept, Floor 2', 'doctor', 1, 1),
+('dr.kim', 'dr.kim@medflow.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Dr. Jennifer Kim', '555-1003', 'Neurology Dept, Room 310', 'doctor', 1, 1),
+('dr.osei', 'dr.osei@medflow.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Dr. Kwame Osei', '555-1004', 'Orthopedics Dept, Suite B', 'doctor', 1, 1),
+('dr.wilson', 'dr.wilson@medflow.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Dr. Emily Wilson', '555-1005', 'Dermatology Clinic', 'doctor', 1, 1);
 
--- Patient Users
+-- Patient Users (NEW)
 INSERT INTO users (username, email, password, full_name, phone, address, role, is_active, email_verified) VALUES 
-('john_doe', 'john.doe@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'John Doe', '555-0104', '123 Main Street, Cityville', 'patient', 1, 1),
-('jane_smith', 'jane.smith@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Jane Smith', '555-0105', '456 Oak Avenue, Townsville', 'patient', 1, 1),
-('bob_wilson', 'bob.wilson@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Bob Wilson', '555-0106', '789 Pine Road, Villagetown', 'patient', 1, 1),
-('alice_brown', 'alice.brown@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Alice Brown', '555-0107', '321 Elm Street, Borough', 'patient', 1, 1),
-('charlie_davis', 'charlie.davis@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Charlie Davis', '555-0108', '654 Maple Drive, Hamlet', 'patient', 1, 1);
+('emma.thompson', 'emma.thompson@email.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Emma Thompson', '555-2001', '42 Maple Avenue, Springfield', 'patient', 1, 1),
+('james.wilson', 'james.wilson@email.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'James Wilson', '555-2002', '15 Oak Street, Rivertown', 'patient', 1, 1),
+('sophia.rodriguez', 'sophia.rodriguez@email.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Sophia Rodriguez', '555-2003', '78 Pine Road, Lakewood', 'patient', 1, 1),
+('liam.nguyen', 'liam.nguyen@email.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Liam Nguyen', '555-2004', '234 Cedar Lane, Hillcrest', 'patient', 1, 1),
+('olivia.brown', 'olivia.brown@email.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Olivia Brown', '555-2005', '567 Birch Blvd, Fairview', 'patient', 1, 1),
+('noah.davis', 'noah.davis@email.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Noah Davis', '555-2006', '890 Spruce Way, Greenfield', 'patient', 1, 1),
+('mia.garcia', 'mia.garcia@email.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Mia Garcia', '555-2007', '123 Willow Drive, Sunset Valley', 'patient', 1, 1);
 
 -- ============================================
--- INSERT DOCTOR PROFILES
+-- DOCTOR PROFILES
 -- ============================================
 
 INSERT INTO doctors (user_id, specialization, qualification, experience_years, consultation_fee, available_days, available_time_start, available_time_end) VALUES 
-((SELECT id FROM users WHERE username = 'dr.smith'), 'Cardiology', 'MD, FACC - Harvard Medical School', 15, 150.00, 'Monday,Tuesday,Wednesday,Thursday,Friday', '09:00:00', '17:00:00'),
-((SELECT id FROM users WHERE username = 'dr.johnson'), 'Pediatrics', 'MD, FAAP - Johns Hopkins University', 10, 120.00, 'Monday,Tuesday,Wednesday,Thursday,Friday', '10:00:00', '18:00:00'),
-((SELECT id FROM users WHERE username = 'dr.williams'), 'Neurology', 'MD, PhD - Stanford University', 20, 200.00, 'Tuesday,Wednesday,Thursday,Friday,Saturday', '09:30:00', '16:30:00'),
-((SELECT id FROM users WHERE username = 'KB'), 'Cardiology', 'MD, FACC - University of Cape Town', 12, 175.00, 'Monday,Tuesday,Thursday,Friday', '08:00:00', '16:00:00');
+((SELECT id FROM users WHERE username = 'dr.patel'), 'Cardiology', 'MD, FACC - Stanford University', 12, 175.00, 'Monday,Tuesday,Wednesday,Thursday', '09:00:00', '17:00:00'),
+((SELECT id FROM users WHERE username = 'dr.martinez'), 'Pediatrics', 'MD, FAAP - UCLA Medical Center', 8, 130.00, 'Monday,Tuesday,Wednesday,Friday', '10:00:00', '18:00:00'),
+((SELECT id FROM users WHERE username = 'dr.kim'), 'Neurology', 'MD, PhD - Johns Hopkins University', 15, 220.00, 'Tuesday,Wednesday,Thursday,Friday', '09:30:00', '16:30:00'),
+((SELECT id FROM users WHERE username = 'dr.osei'), 'Orthopedics', 'MD - University of Ghana Medical School', 10, 160.00, 'Monday,Wednesday,Thursday,Saturday', '08:00:00', '15:00:00'),
+((SELECT id FROM users WHERE username = 'dr.wilson'), 'Dermatology', 'MD, FAAD - Harvard Medical School', 7, 145.00, 'Monday,Tuesday,Thursday,Friday', '11:00:00', '19:00:00');
 
 -- ============================================
--- INSERT SAMPLE APPOINTMENTS
+-- SAMPLE APPOINTMENTS
 -- ============================================
 
 INSERT INTO appointments (patient_id, doctor_id, appointment_date, appointment_time, status, symptoms, notes) VALUES 
-((SELECT id FROM users WHERE username = 'john_doe'), (SELECT id FROM doctors WHERE user_id = (SELECT id FROM users WHERE username = 'dr.smith')), CURDATE(), '10:00:00', 'confirmed', 'Chest pain, shortness of breath, palpitations', 'Patient needs ECG and stress test'),
-((SELECT id FROM users WHERE username = 'jane_smith'), (SELECT id FROM doctors WHERE user_id = (SELECT id FROM users WHERE username = 'dr.johnson')), CURDATE() + INTERVAL 1 DAY, '14:30:00', 'pending', 'Fever, cough, runny nose, sore throat', 'Possible seasonal flu, needs testing'),
-((SELECT id FROM users WHERE username = 'bob_wilson'), (SELECT id FROM doctors WHERE user_id = (SELECT id FROM users WHERE username = 'dr.williams')), CURDATE() + INTERVAL 2 DAY, '11:15:00', 'confirmed', 'Severe headaches, blurred vision, dizziness', 'MRI recommended for further evaluation'),
-((SELECT id FROM users WHERE username = 'alice_brown'), (SELECT id FROM doctors WHERE user_id = (SELECT id FROM users WHERE username = 'dr.smith')), CURDATE() + INTERVAL 3 DAY, '15:45:00', 'pending', 'High blood pressure, fatigue', 'Follow-up appointment'),
-((SELECT id FROM users WHERE username = 'charlie_davis'), (SELECT id FROM doctors WHERE user_id = (SELECT id FROM users WHERE username = 'KB')), CURDATE() + INTERVAL 1 DAY, '09:30:00', 'confirmed', 'Chest discomfort, irregular heartbeat', 'Echocardiogram scheduled');
+((SELECT id FROM users WHERE username = 'emma.thompson'), (SELECT id FROM doctors WHERE user_id = (SELECT id FROM users WHERE username = 'dr.patel')), CURDATE(), '10:00:00', 'confirmed', 'Chest pain, shortness of breath', 'ECG and stress test scheduled'),
+((SELECT id FROM users WHERE username = 'james.wilson'), (SELECT id FROM doctors WHERE user_id = (SELECT id FROM users WHERE username = 'dr.martinez')), CURDATE() + INTERVAL 1 DAY, '14:30:00', 'pending', 'Fever, persistent cough', 'Flu test recommended'),
+((SELECT id FROM users WHERE username = 'sophia.rodriguez'), (SELECT id FROM doctors WHERE user_id = (SELECT id FROM users WHERE username = 'dr.kim')), CURDATE() + INTERVAL 2 DAY, '11:15:00', 'confirmed', 'Severe migraines, vision changes', 'MRI and neurological assessment'),
+((SELECT id FROM users WHERE username = 'liam.nguyen'), (SELECT id FROM doctors WHERE user_id = (SELECT id FROM users WHERE username = 'dr.osei')), CURDATE() + INTERVAL 1 DAY, '09:30:00', 'confirmed', 'Knee pain, difficulty walking', 'X-ray and physical therapy consult'),
+((SELECT id FROM users WHERE username = 'olivia.brown'), (SELECT id FROM doctors WHERE user_id = (SELECT id FROM users WHERE username = 'dr.wilson')), CURDATE() + INTERVAL 3 DAY, '15:45:00', 'pending', 'Skin rash, itching', 'Allergy testing scheduled'),
+((SELECT id FROM users WHERE username = 'noah.davis'), (SELECT id FROM doctors WHERE user_id = (SELECT id FROM users WHERE username = 'dr.patel')), CURDATE() + INTERVAL 2 DAY, '13:00:00', 'pending', 'High blood pressure, fatigue', 'Follow-up appointment'),
+((SELECT id FROM users WHERE username = 'mia.garcia'), (SELECT id FROM doctors WHERE user_id = (SELECT id FROM users WHERE username = 'dr.martinez')), CURDATE() + INTERVAL 4 DAY, '10:30:00', 'confirmed', 'Ear infection, fever', 'Antibiotics prescribed');
 
 -- ============================================
--- INSERT SAMPLE MEDICAL RECORDS
+-- SAMPLE MEDICAL RECORDS
 -- ============================================
 
 INSERT INTO medical_records (patient_id, doctor_id, diagnosis, prescription, blood_pressure, heart_rate, temperature, weight, allergies, notes, record_date) VALUES 
-((SELECT id FROM users WHERE username = 'john_doe'), (SELECT id FROM users WHERE username = 'dr.smith'), 'Hypertension Stage 1', 'Lisinopril 10mg once daily, Low sodium diet', '135/85', 75, 98.6, 85.5, 'None', 'Initial diagnosis, follow up in 2 weeks', CURDATE()),
-((SELECT id FROM users WHERE username = 'jane_smith'), (SELECT id FROM users WHERE username = 'dr.johnson'), 'Upper Respiratory Infection', 'Amoxicillin 500mg three times daily for 7 days, Rest and fluids', '110/70', 88, 99.1, 62.0, 'Penicillin', 'Prescribed antibiotics, monitor temperature', CURDATE()),
-((SELECT id FROM users WHERE username = 'bob_wilson'), (SELECT id FROM users WHERE username = 'dr.williams'), 'Migraine with aura', 'Sumatriptan 50mg as needed, Avoid triggers', '120/80', 82, 98.4, 78.0, 'Sulfa drugs', 'MRI scheduled, keep headache diary', CURDATE()),
-((SELECT id FROM users WHERE username = 'charlie_davis'), (SELECT id FROM users WHERE username = 'KB'), 'Arrhythmia', 'Metoprolol 25mg daily, Reduce caffeine', '128/82', 95, 98.7, 82.0, 'None', 'Holter monitor recommended', CURDATE());
+((SELECT id FROM users WHERE username = 'emma.thompson'), (SELECT id FROM users WHERE username = 'dr.patel'), 'Hypertension Stage 1', 'Lisinopril 10mg daily', '135/85', 78, 98.6, 68.5, 'Penicillin', 'Monitor BP weekly', CURDATE()),
+((SELECT id FROM users WHERE username = 'james.wilson'), (SELECT id FROM users WHERE username = 'dr.martinez'), 'Upper Respiratory Infection', 'Amoxicillin 500mg 3x daily', '118/72', 90, 99.2, 82.0, 'None', 'Rest and fluids', CURDATE()),
+((SELECT id FROM users WHERE username = 'sophia.rodriguez'), (SELECT id FROM users WHERE username = 'dr.kim'), 'Chronic Migraines', 'Sumatriptan 50mg as needed', '122/78', 72, 98.4, 58.5, 'Sulfa drugs', 'Keep headache diary', CURDATE()),
+((SELECT id FROM users WHERE username = 'liam.nguyen'), (SELECT id FROM users WHERE username = 'dr.osei'), 'ACL Strain', 'Physical therapy, Ibuprofen 400mg', '125/80', 85, 98.7, 75.0, 'NSAIDs', 'Follow up in 2 weeks', CURDATE()),
+((SELECT id FROM users WHERE username = 'olivia.brown'), (SELECT id FROM users WHERE username = 'dr.wilson'), 'Contact Dermatitis', 'Hydrocortisone cream 1%', '110/70', 70, 98.5, 62.0, 'Latex', 'Avoid irritants', CURDATE());
 
 -- ============================================
--- INSERT SAMPLE BILLS
+-- SAMPLE BILLS
 -- ============================================
 
 INSERT INTO bills (patient_id, appointment_id, amount, status, payment_method, payment_date, description) VALUES 
-((SELECT id FROM users WHERE username = 'john_doe'), (SELECT id FROM appointments WHERE patient_id = (SELECT id FROM users WHERE username = 'john_doe') LIMIT 1), 150.00, 'paid', 'Credit Card', NOW(), 'Cardiology consultation fee'),
-((SELECT id FROM users WHERE username = 'jane_smith'), (SELECT id FROM appointments WHERE patient_id = (SELECT id FROM users WHERE username = 'jane_smith') LIMIT 1), 120.00, 'pending', NULL, NULL, 'Pediatrics consultation fee'),
-((SELECT id FROM users WHERE username = 'bob_wilson'), (SELECT id FROM appointments WHERE patient_id = (SELECT id FROM users WHERE username = 'bob_wilson') LIMIT 1), 200.00, 'pending', NULL, NULL, 'Neurology consultation fee'),
-((SELECT id FROM users WHERE username = 'charlie_davis'), (SELECT id FROM appointments WHERE patient_id = (SELECT id FROM users WHERE username = 'charlie_davis') LIMIT 1), 175.00, 'paid', 'Insurance', NOW(), 'Cardiology consultation - Dr. Ndlovu');
+((SELECT id FROM users WHERE username = 'emma.thompson'), (SELECT id FROM appointments WHERE patient_id = (SELECT id FROM users WHERE username = 'emma.thompson') LIMIT 1), 175.00, 'paid', 'Credit Card', NOW(), 'Cardiology consultation'),
+((SELECT id FROM users WHERE username = 'james.wilson'), (SELECT id FROM appointments WHERE patient_id = (SELECT id FROM users WHERE username = 'james.wilson') LIMIT 1), 130.00, 'pending', NULL, NULL, 'Pediatrics consultation'),
+((SELECT id FROM users WHERE username = 'sophia.rodriguez'), (SELECT id FROM appointments WHERE patient_id = (SELECT id FROM users WHERE username = 'sophia.rodriguez') LIMIT 1), 220.00, 'paid', 'Insurance', NOW(), 'Neurology consultation'),
+((SELECT id FROM users WHERE username = 'liam.nguyen'), (SELECT id FROM appointments WHERE patient_id = (SELECT id FROM users WHERE username = 'liam.nguyen') LIMIT 1), 160.00, 'pending', NULL, NULL, 'Orthopedics consultation'),
+((SELECT id FROM users WHERE username = 'olivia.brown'), (SELECT id FROM appointments WHERE patient_id = (SELECT id FROM users WHERE username = 'olivia.brown') LIMIT 1), 145.00, 'pending', NULL, NULL, 'Dermatology consultation'),
+((SELECT id FROM users WHERE username = 'mia.garcia'), (SELECT id FROM appointments WHERE patient_id = (SELECT id FROM users WHERE username = 'mia.garcia') LIMIT 1), 130.00, 'paid', 'Cash', NOW(), 'Pediatrics follow-up');
 
 -- ============================================
--- INSERT SYSTEM LOGS
+-- SYSTEM LOGS
 -- ============================================
 
 INSERT INTO system_logs (user_id, action, details, ip_address) VALUES 
-((SELECT id FROM users WHERE username = 'admin'), 'Database Setup', 'Initial database setup completed with default users', '127.0.0.1'),
-((SELECT id FROM users WHERE username = 'admin'), 'System Initialization', 'Hospital management system deployed', '127.0.0.1');
+((SELECT id FROM users WHERE username = 'superadmin'), 'Database Setup', 'Initial database setup completed with new user profiles', '127.0.0.1'),
+((SELECT id FROM users WHERE username = 'itadmin'), 'System Initialization', 'Hospital management system deployed with enhanced security', '127.0.0.1');
 
 -- ============================================
 -- CREATE INDEXES FOR PERFORMANCE
@@ -220,38 +230,34 @@ SELECT COUNT(*) AS Total_Users,
 FROM users;
 
 SELECT '' AS '';
-SELECT 'Default Login Credentials:' AS '';
+SELECT 'NEW DEFAULT LOGIN CREDENTIALS:' AS '';
 SELECT '-----------------------------------------' AS '';
 SELECT 'ADMIN ACCESS:' AS '';
-SELECT '  Username: admin' AS '';
-SELECT '  Password: password123' AS '';
+SELECT '  Username: superadmin' AS '';
+SELECT '  Password: SecurePass123!' AS '';
+SELECT '  Username: itadmin' AS '';
+SELECT '  Password: SecurePass123!' AS '';
 SELECT '' AS '';
 SELECT 'DOCTOR ACCESS:' AS '';
-SELECT '  Username: dr.smith' AS '';
-SELECT '  Username: dr.johnson' AS '';
-SELECT '  Username: dr.williams' AS '';
-SELECT '  Username: KB' AS '';
-SELECT '  Password: password123 (for all doctors)' AS '';
+SELECT '  Username: dr.patel (Cardiology)' AS '';
+SELECT '  Username: dr.martinez (Pediatrics)' AS '';
+SELECT '  Username: dr.kim (Neurology)' AS '';
+SELECT '  Username: dr.osei (Orthopedics)' AS '';
+SELECT '  Username: dr.wilson (Dermatology)' AS '';
+SELECT '  Password: SecurePass123! (for all doctors)' AS '';
 SELECT '' AS '';
 SELECT 'PATIENT ACCESS:' AS '';
-SELECT '  Username: john_doe' AS '';
-SELECT '  Username: jane_smith' AS '';
-SELECT '  Username: bob_wilson' AS '';
-SELECT '  Username: alice_brown' AS '';
-SELECT '  Username: charlie_davis' AS '';
-SELECT '  Password: password123 (for all patients)' AS '';
+SELECT '  Username: emma.thompson' AS '';
+SELECT '  Username: james.wilson' AS '';
+SELECT '  Username: sophia.rodriguez' AS '';
+SELECT '  Username: liam.nguyen' AS '';
+SELECT '  Username: olivia.brown' AS '';
+SELECT '  Username: noah.davis' AS '';
+SELECT '  Username: mia.garcia' AS '';
+SELECT '  Password: SecurePass123! (for all patients)' AS '';
 SELECT '-----------------------------------------' AS '';
 
 -- List all users for verification
 SELECT '' AS '';
 SELECT 'All Registered Users:' AS '';
 SELECT id, username, email, full_name, role, is_active, email_verified FROM users ORDER BY role, username;
-
--- Show password reset logs table structure
-SELECT '' AS '';
-SELECT 'Password Reset System Ready:' AS '';
-SELECT '  - reset_token column added to users table' AS '';
-SELECT '  - reset_token_expiry column added to users table' AS '';
-SELECT '  - email_verified column added to users table' AS '';
-SELECT '  - password_reset_logs table created for security auditing' AS '';
-SELECT '  - Indexes created for fast token lookups' AS '';

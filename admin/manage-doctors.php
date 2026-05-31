@@ -1,10 +1,9 @@
 <?php
-// admin/manage-doctors.php - Manage all doctors in the system with modern UI
+// admin/manage-doctors.php - Completely Redesigned Doctor Management
 require_once '../config/database.php';
 require_once '../includes/SessionManager.php';
 require_once '../includes/Auth.php';
 
-// Start session and check admin role
 SessionManager::startSession();
 SessionManager::requireRole('admin');
 
@@ -12,7 +11,6 @@ $database = new Database();
 $db = $database->getConnection();
 $auth = new Auth($db);
 
-// Handle doctor actions
 $error = '';
 $success = '';
 
@@ -26,7 +24,7 @@ $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $limit = 12;
 $offset = ($page - 1) * $limit;
 
-// Build count query for pagination
+// Build count query
 $countQuery = "SELECT COUNT(*) as total FROM users u 
                JOIN doctors d ON u.id = d.user_id 
                WHERE u.role = 'doctor'";
@@ -36,13 +34,11 @@ if ($specialization_filter !== 'all') {
     $countQuery .= " AND d.specialization = :specialization";
     $countParams[':specialization'] = $specialization_filter;
 }
-
 if ($status_filter !== 'all') {
     $is_active = ($status_filter === 'active') ? 1 : 0;
     $countQuery .= " AND u.is_active = :is_active";
     $countParams[':is_active'] = $is_active;
 }
-
 if (!empty($search)) {
     $countQuery .= " AND (u.username LIKE :search OR u.email LIKE :search OR u.full_name LIKE :search OR d.specialization LIKE :search)";
     $countParams[':search'] = "%$search%";
@@ -67,13 +63,11 @@ if ($specialization_filter !== 'all') {
     $query .= " AND d.specialization = :specialization";
     $params[':specialization'] = $specialization_filter;
 }
-
 if ($status_filter !== 'all') {
     $is_active = ($status_filter === 'active') ? 1 : 0;
     $query .= " AND u.is_active = :is_active";
     $params[':is_active'] = $is_active;
 }
-
 if (!empty($search)) {
     $query .= " AND (u.username LIKE :search OR u.email LIKE :search OR u.full_name LIKE :search OR d.specialization LIKE :search)";
     $params[':search'] = "%$search%";
@@ -119,25 +113,8 @@ if (isset($_POST['toggle_status']) && isset($_POST['doctor_id'])) {
         $updateStmt->bindParam(':doctor_id', $doctor_id);
         
         if ($updateStmt->execute()) {
-            $action = $new_status ? 'activated' : 'deactivated';
-            $success = "Dr. '{$doctor['full_name']}' has been {$action} successfully!";
-            
-            $logQuery = "INSERT INTO system_logs (user_id, action, details, ip_address) VALUES (:user_id, :action, :details, :ip)";
-            $logStmt = $db->prepare($logQuery);
-            $log_user_id = SessionManager::getUserId();
-            $log_action = "Doctor {$action}";
-            $log_details = "Doctor '{$doctor['full_name']}' was {$action} by admin";
-            $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
-            $logStmt->bindParam(':user_id', $log_user_id);
-            $logStmt->bindParam(':action', $log_action);
-            $logStmt->bindParam(':details', $log_details);
-            $logStmt->bindParam(':ip', $ip);
-            $logStmt->execute();
-            
             header("Location: manage-doctors.php?specialization=$specialization_filter&status=$status_filter&search=$search&page=$page");
             exit();
-        } else {
-            $error = "Failed to update doctor status.";
         }
     }
 }
@@ -160,24 +137,8 @@ if (isset($_POST['delete_doctor']) && isset($_POST['doctor_id'])) {
         $deleteStmt->bindParam(':doctor_id', $doctor_id);
         
         if ($deleteStmt->execute()) {
-            $success = "Dr. '{$doctor['full_name']}' has been deleted successfully!";
-            
-            $logQuery = "INSERT INTO system_logs (user_id, action, details, ip_address) VALUES (:user_id, :action, :details, :ip)";
-            $logStmt = $db->prepare($logQuery);
-            $log_user_id = SessionManager::getUserId();
-            $log_action = "Doctor Deleted";
-            $log_details = "Doctor '{$doctor['full_name']}' was deleted by admin";
-            $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
-            $logStmt->bindParam(':user_id', $log_user_id);
-            $logStmt->bindParam(':action', $log_action);
-            $logStmt->bindParam(':details', $log_details);
-            $logStmt->bindParam(':ip', $ip);
-            $logStmt->execute();
-            
             header("Location: manage-doctors.php?specialization=$specialization_filter&status=$status_filter&search=$search&page=$page");
             exit();
-        } else {
-            $error = "Failed to delete doctor.";
         }
     }
 }
@@ -201,27 +162,84 @@ $stats = $stats_stmt->fetch(PDO::FETCH_ASSOC);
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Doctors | MediFlow HMS - Admin</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
-            min-height: 100vh;
+        :root {
+            --bg-main: #0A0C15;
+            --surface-card: rgba(18, 22, 33, 0.75);
+            --border-color: rgba(255, 255, 255, 0.06);
+            --text-main: #F3F4F6;
+            --text-muted: #9CA3AF;
+            --primary: #8B5CF6;
+            --primary-dark: #7C3AED;
+            --primary-glow: rgba(139, 92, 246, 0.2);
+            --accent: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --info: #3B82F6;
         }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background: var(--bg-main);
+            color: var(--text-main);
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .bg-orb-1 {
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            top: -100px;
+            right: -100px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.12) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .bg-orb-2 {
+            position: fixed;
+            width: 500px;
+            height: 500px;
+            bottom: -150px;
+            left: -150px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.06) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+            animation: float 25s ease-in-out infinite reverse;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(30px, -30px); }
+        }
+
         .navbar {
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-            padding: 0.75rem 0;
             position: sticky;
             top: 0;
-            z-index: 1000;
-            border-bottom: 1px solid rgba(37, 99, 235, 0.1);
+            z-index: 100;
+            background: rgba(10, 12, 21, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.75rem 0;
         }
+
         .navbar-container {
             max-width: 1400px;
             margin: 0 auto;
@@ -229,114 +247,164 @@ $stats = $stats_stmt->fetch(PDO::FETCH_ASSOC);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
+
         .logo {
-            font-size: 1.5rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #1e3a5f, #2563eb);
+            font-size: 1.4rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #FFF, var(--primary));
             -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
+            -webkit-text-fill-color: transparent;
             text-decoration: none;
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
+
         .nav-menu {
             display: flex;
             gap: 0.5rem;
             list-style: none;
-            align-items: center;
+            flex-wrap: wrap;
         }
+
         .nav-link {
             text-decoration: none;
-            color: #475569;
+            color: var(--text-muted);
             font-weight: 500;
             transition: all 0.3s;
             padding: 0.5rem 1rem;
             border-radius: 12px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
-        .nav-link:hover, .nav-link.active { color: #2563eb; background: #eff6ff; }
-        .container { max-width: 1400px; margin: 2rem auto; padding: 0 2rem; }
-        .glass-card {
-            background: rgba(255, 255, 255, 0.96);
-            border-radius: 32px;
-            padding: 2rem;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--primary);
+            background: rgba(139, 92, 246, 0.1);
         }
-        .page-header { margin-bottom: 2rem; }
-        .page-header h1 {
-            font-size: 1.875rem;
+
+        .admin-wrapper {
+            position: relative;
+            z-index: 2;
+            max-width: 1400px;
+            margin: 1.5rem auto;
+            padding: 0 2rem;
+        }
+
+        .top-bar {
+            margin-bottom: 2rem;
+        }
+
+        .top-bar h1 {
+            font-size: 1.8rem;
             font-weight: 700;
-            color: #1e293b;
-            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #FFF, var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .top-bar p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+        }
+
+        /* Stats Row */
+        .stats-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .stat-pill {
+            background: rgba(18, 22, 33, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 40px;
+            padding: 0.6rem 1.2rem;
             display: flex;
             align-items: center;
             gap: 0.75rem;
+            transition: all 0.2s;
         }
-        .page-header p { color: #64748b; }
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
+
+        .stat-pill:hover {
+            border-color: var(--primary);
         }
-        .stat-card {
-            background: white;
-            padding: 1rem;
-            border-radius: 20px;
-            transition: all 0.3s;
-            border: 1px solid rgba(37, 99, 235, 0.08);
-            text-align: center;
+
+        .stat-pill i {
+            font-size: 1.1rem;
         }
-        .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px -8px rgba(0,0,0,0.1); }
-        .stat-icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
-        .stat-number { font-size: 1.75rem; font-weight: 800; color: #1e293b; line-height: 1; }
-        .stat-label { font-size: 0.65rem; color: #64748b; margin-top: 0.25rem; text-transform: uppercase; letter-spacing: 0.5px; }
-        .filters-bar {
-            background: white;
-            padding: 1.25rem;
-            border-radius: 24px;
+        .stat-pill.total i { color: var(--primary); }
+        .stat-pill.active i { color: var(--accent); }
+        .stat-pill.inactive i { color: var(--danger); }
+        .stat-pill.experienced i { color: var(--warning); }
+        .stat-pill.mid i { color: var(--info); }
+        .stat-pill.junior i { color: var(--primary); }
+
+        .stat-pill .count {
+            font-weight: 800;
+            font-size: 1.1rem;
+        }
+
+        .stat-pill .label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        /* Filters Card */
+        .filters-card {
+            background: rgba(18, 22, 33, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 28px;
+            padding: 1.25rem 1.5rem;
             margin-bottom: 1.5rem;
-            border: 1px solid rgba(37, 99, 235, 0.08);
         }
+
         .filters {
             display: flex;
             gap: 1rem;
             flex-wrap: wrap;
             align-items: flex-end;
         }
+
         .filter-group {
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
         }
+
         .filter-group label {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             font-weight: 600;
-            color: #64748b;
+            color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
+
         .filter-select, .search-input {
             padding: 0.6rem 1rem;
-            border: 1.5px solid #e2e8f0;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
             border-radius: 14px;
             font-size: 0.85rem;
-            background: #f8fafc;
-            transition: all 0.2s;
+            color: var(--text-main);
         }
+
         .filter-select:focus, .search-input:focus {
             outline: none;
-            border-color: #2563eb;
-            background: white;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+            border-color: var(--primary);
         }
-        .search-input { min-width: 220px; }
+
+        .search-input {
+            min-width: 220px;
+        }
+
         .btn {
             padding: 0.6rem 1.2rem;
             border: none;
@@ -349,126 +417,193 @@ $stats = $stats_stmt->fetch(PDO::FETCH_ASSOC);
             align-items: center;
             gap: 0.5rem;
         }
-        .btn-primary { background: linear-gradient(135deg, #2563eb, #3b82f6); color: white; }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(37, 99, 235, 0.3); }
-        .btn-secondary { background: #f1f5f9; color: #475569; }
-        .btn-secondary:hover { background: #e2e8f0; }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.05);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Doctors Grid */
         .doctors-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
             gap: 1.25rem;
         }
+
         .doctor-card {
-            background: white;
+            background: rgba(18, 22, 33, 0.5);
+            border: 1px solid var(--border-color);
             border-radius: 24px;
             overflow: hidden;
-            border: 1px solid rgba(37, 99, 235, 0.08);
             transition: all 0.3s;
         }
+
         .doctor-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 24px -12px rgba(0, 0, 0, 0.12);
+            transform: translateY(-3px);
+            border-color: var(--primary);
         }
+
         .card-header {
-            background: linear-gradient(135deg, #f8fafc, #ffffff);
             padding: 1rem;
-            border-bottom: 1px solid #eef2ff;
+            border-bottom: 1px solid var(--border-color);
             display: flex;
             align-items: center;
             gap: 1rem;
+            background: rgba(139, 92, 246, 0.03);
         }
+
         .doctor-avatar {
-            width: 56px;
-            height: 56px;
-            background: linear-gradient(135deg, #2563eb, #3b82f6);
-            border-radius: 20px;
+            width: 52px;
+            height: 52px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 18px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
             font-size: 1.3rem;
             font-weight: 700;
         }
-        .doctor-info h3 { font-size: 1rem; font-weight: 700; color: #1e293b; margin-bottom: 0.25rem; }
-        .doctor-info p { font-size: 0.7rem; color: #64748b; }
-        .card-body { padding: 1rem; }
+
+        .doctor-info h4 {
+            font-size: 0.95rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .doctor-info p {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: 40px;
+            font-size: 0.6rem;
+            font-weight: 600;
+            margin-left: auto;
+        }
+
+        .badge-active { background: rgba(16, 185, 129, 0.15); color: #34D399; }
+        .badge-inactive { background: rgba(107, 114, 128, 0.15); color: #9CA3AF; }
+        .badge-spec { background: rgba(139, 92, 246, 0.15); color: #A78BFA; }
+
+        .card-body {
+            padding: 1rem;
+        }
+
         .info-row {
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            padding: 0.6rem 0;
-            border-bottom: 1px solid #f1f5f9;
-            font-size: 0.8rem;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 0.75rem;
         }
-        .info-row i { width: 24px; color: #2563eb; }
+
+        .info-row i {
+            width: 24px;
+            color: var(--primary);
+        }
+
         .card-footer {
             padding: 1rem;
-            background: #fafcff;
-            border-top: 1px solid #eef2ff;
+            border-top: 1px solid var(--border-color);
             display: flex;
             gap: 0.5rem;
-            flex-wrap: wrap;
             justify-content: flex-end;
         }
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.25rem 0.75rem;
-            border-radius: 40px;
-            font-size: 0.65rem;
-            font-weight: 600;
-            gap: 0.3rem;
-        }
-        .badge-active { background: #d1fae5; color: #059669; }
-        .badge-inactive { background: #f1f5f9; color: #64748b; }
-        .badge-specialization { background: #dbeafe; color: #2563eb; }
-        .icon-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
+
+        .action-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
             padding: 0.4rem;
             border-radius: 10px;
+            cursor: pointer;
             transition: all 0.2s;
-            font-size: 0.9rem;
+            color: var(--text-muted);
         }
-        .icon-btn:hover { background: #f1f5f9; transform: scale(1.05); }
-        .alert {
-            padding: 1rem 1.25rem;
-            border-radius: 20px;
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            animation: slideDown 0.3s ease-out;
+
+        .action-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
         }
-        .alert-success { background: #d1fae5; color: #065f46; border-left: 4px solid #10b981; }
-        .alert-error { background: #fee2e2; color: #991b1b; border-left: 4px solid #dc2626; }
-        .alert-info { background: #dbeafe; color: #1e40af; border-left: 4px solid #2563eb; }
-        .empty-state {
-            text-align: center;
-            padding: 3rem;
-            background: white;
-            border-radius: 24px;
-            color: #94a3b8;
+
+        .delete-btn:hover {
+            border-color: var(--danger);
+            color: var(--danger);
         }
+
+        /* Pagination */
         .pagination {
             display: flex;
             justify-content: center;
             gap: 0.5rem;
             margin-top: 2rem;
-            flex-wrap: wrap;
         }
+
         .page-link {
-            padding: 0.5rem 1rem;
-            border: 1px solid #e2e8f0;
-            background: white;
+            padding: 0.5rem 0.9rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
             border-radius: 12px;
+            color: var(--text-muted);
             text-decoration: none;
-            color: #475569;
-            transition: all 0.2s;
             font-size: 0.8rem;
+            transition: all 0.2s;
         }
-        .page-link:hover, .page-link.active { background: #2563eb; color: white; border-color: #2563eb; }
+
+        .page-link:hover, .page-link.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            background: rgba(18, 22, 33, 0.5);
+            border-radius: 28px;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            opacity: 0.5;
+            margin-bottom: 1rem;
+        }
+
+        /* Alert Info */
+        .alert-info {
+            background: rgba(139, 92, 246, 0.08);
+            border-left: 3px solid var(--primary);
+            padding: 1rem 1.25rem;
+            border-radius: 20px;
+            margin-top: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -476,68 +611,125 @@ $stats = $stats_stmt->fetch(PDO::FETCH_ASSOC);
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.7);
             backdrop-filter: blur(4px);
             z-index: 2000;
             align-items: center;
             justify-content: center;
         }
-        .modal.active { display: flex; }
+
+        .modal.active {
+            display: flex;
+        }
+
         .modal-content {
-            background: white;
-            border-radius: 32px;
+            background: rgba(18, 22, 33, 0.95);
+            border: 1px solid var(--border-color);
+            border-radius: 28px;
             max-width: 550px;
             width: 90%;
             animation: modalSlideIn 0.3s ease;
             max-height: 85vh;
             overflow-y: auto;
         }
+
         .modal-header {
             padding: 1.25rem 1.5rem;
-            border-bottom: 1px solid #eef2ff;
+            border-bottom: 1px solid var(--border-color);
             font-weight: 700;
             font-size: 1.1rem;
-            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
-        .modal-body { padding: 1.5rem; }
-        .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid #eef2ff; display: flex; justify-content: flex-end; }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+        }
+
         .detail-row {
             display: flex;
             padding: 0.7rem 0;
-            border-bottom: 1px solid #f1f5f9;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
-        .detail-label { font-weight: 600; width: 120px; color: #475569; font-size: 0.8rem; }
-        .detail-value { flex: 1; color: #1e293b; font-size: 0.85rem; }
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+
+        .detail-label {
+            font-weight: 600;
+            width: 120px;
+            color: var(--text-muted);
+            font-size: 0.75rem;
         }
+
+        .detail-value {
+            flex: 1;
+            font-size: 0.85rem;
+        }
+
         @keyframes modalSlideIn {
             from { opacity: 0; transform: translateY(-30px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .fade-in { animation: fadeInUp 0.5s ease-out; }
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+
+        /* Responsive */
+        @media (max-width: 1000px) {
+            .doctors-grid {
+                grid-template-columns: 1fr;
+            }
+            .filters {
+                flex-direction: column;
+            }
+            .filter-group {
+                width: 100%;
+            }
+            .search-input {
+                width: 100%;
+            }
+            .stats-row {
+                justify-content: center;
+            }
         }
+
         @media (max-width: 768px) {
-            .navbar-container { flex-direction: column; gap: 1rem; padding: 0 1rem; }
-            .nav-menu { flex-wrap: wrap; justify-content: center; }
-            .container { padding: 0 1rem; }
-            .glass-card { padding: 1rem; }
-            .filters { flex-direction: column; }
-            .filter-group { width: 100%; }
-            .search-input { width: 100%; }
-            .doctors-grid { grid-template-columns: 1fr; }
-            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .navbar-container {
+                flex-direction: column;
+                padding: 0 1rem;
+            }
+            .nav-menu {
+                justify-content: center;
+            }
+            .admin-wrapper {
+                padding: 0 1rem;
+            }
+            .stats-row {
+                gap: 0.5rem;
+            }
+            .stat-pill {
+                padding: 0.4rem 0.8rem;
+            }
+            .stat-pill .label {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
+
+    <div class="bg-orb-1"></div>
+    <div class="bg-orb-2"></div>
+
     <nav class="navbar">
         <div class="navbar-container">
-            <a href="dashboard.php" class="logo"><i class="fas fa-heartbeat"></i><span>MediFlow HMS</span></a>
+            <a href="dashboard.php" class="logo">
+                <i class="fas fa-heart-pulse"></i>
+                <span>Hospital System</span>
+            </a>
             <ul class="nav-menu">
                 <li><a href="dashboard.php" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a></li>
                 <li><a href="manage-users.php" class="nav-link"><i class="fas fa-users"></i> Users</a></li>
@@ -549,127 +741,148 @@ $stats = $stats_stmt->fetch(PDO::FETCH_ASSOC);
         </div>
     </nav>
 
-    <div class="container">
-        <div class="glass-card fade-in">
-            <div class="page-header">
-                <h1><i class="fas fa-user-md"></i> Doctor Management</h1>
-                <p>View, manage, and control all doctors in the system</p>
-            </div>
+    <div class="admin-wrapper">
+        <div class="top-bar">
+            <h1><i class="fas fa-user-md"></i> Doctor Management</h1>
+            <p>View, manage, and control all doctors in the system</p>
+        </div>
 
-            <!-- Stats -->
-            <div class="stats-grid">
-                <div class="stat-card"><div class="stat-icon">👨‍⚕️</div><div class="stat-number"><?php echo $stats['total']; ?></div><div class="stat-label">Total</div></div>
-                <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-number"><?php echo $stats['active']; ?></div><div class="stat-label">Active</div></div>
-                <div class="stat-card"><div class="stat-icon">⛔</div><div class="stat-number"><?php echo $stats['inactive']; ?></div><div class="stat-label">Inactive</div></div>
-                <div class="stat-card"><div class="stat-icon">⭐</div><div class="stat-number"><?php echo $stats['experienced']; ?></div><div class="stat-label">10+ Years</div></div>
-                <div class="stat-card"><div class="stat-icon">📊</div><div class="stat-number"><?php echo $stats['mid_level']; ?></div><div class="stat-label">5-9 Years</div></div>
-                <div class="stat-card"><div class="stat-icon">🌱</div><div class="stat-number"><?php echo $stats['junior']; ?></div><div class="stat-label">Junior</div></div>
-            </div>
+        <!-- Stats Pills -->
+        <div class="stats-row">
+            <div class="stat-pill total"><i class="fas fa-user-md"></i><span class="count"><?php echo $stats['total']; ?></span><span class="label">Total</span></div>
+            <div class="stat-pill active"><i class="fas fa-check-circle"></i><span class="count"><?php echo $stats['active']; ?></span><span class="label">Active</span></div>
+            <div class="stat-pill inactive"><i class="fas fa-ban"></i><span class="count"><?php echo $stats['inactive']; ?></span><span class="label">Inactive</span></div>
+            <div class="stat-pill experienced"><i class="fas fa-star"></i><span class="count"><?php echo $stats['experienced']; ?></span><span class="label">10+ Years</span></div>
+            <div class="stat-pill mid"><i class="fas fa-chart-line"></i><span class="count"><?php echo $stats['mid_level']; ?></span><span class="label">5-9 Years</span></div>
+            <div class="stat-pill junior"><i class="fas fa-seedling"></i><span class="count"><?php echo $stats['junior']; ?></span><span class="label">Junior</span></div>
+        </div>
 
-            <?php if ($success): ?><div class="alert alert-success"><i class="fas fa-check-circle"></i><span><?php echo htmlspecialchars($success); ?></span></div><?php endif; ?>
-            <?php if ($error): ?><div class="alert alert-error"><i class="fas fa-exclamation-triangle"></i><span><?php echo htmlspecialchars($error); ?></span></div><?php endif; ?>
-
-            <!-- Filters -->
-            <div class="filters-bar">
-                <form method="GET" action="" class="filters">
-                    <div class="filter-group"><label>Specialization</label><select name="specialization" class="filter-select" onchange="this.form.submit()">
-                        <option value="all" <?php echo $specialization_filter == 'all' ? 'selected' : ''; ?>>All</option>
+        <!-- Filters -->
+        <div class="filters-card">
+            <form method="GET" action="" class="filters">
+                <div class="filter-group">
+                    <label><i class="fas fa-stethoscope"></i> Specialization</label>
+                    <select name="specialization" class="filter-select" onchange="this.form.submit()">
+                        <option value="all" <?php echo $specialization_filter == 'all' ? 'selected' : ''; ?>>All Specializations</option>
                         <?php foreach ($specializations as $spec): ?>
                             <option value="<?php echo htmlspecialchars($spec['specialization']); ?>" <?php echo $specialization_filter == $spec['specialization'] ? 'selected' : ''; ?>><?php echo htmlspecialchars($spec['specialization']); ?></option>
                         <?php endforeach; ?>
-                    </select></div>
-                    <div class="filter-group"><label>Status</label><select name="status" class="filter-select" onchange="this.form.submit()">
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label><i class="fas fa-circle"></i> Status</label>
+                    <select name="status" class="filter-select" onchange="this.form.submit()">
                         <option value="all" <?php echo $status_filter == 'all' ? 'selected' : ''; ?>>All</option>
                         <option value="active" <?php echo $status_filter == 'active' ? 'selected' : ''; ?>>Active</option>
                         <option value="inactive" <?php echo $status_filter == 'inactive' ? 'selected' : ''; ?>>Inactive</option>
-                    </select></div>
-                    <div class="filter-group" style="flex:1"><label>Search</label><div style="display:flex; gap:0.5rem;">
+                    </select>
+                </div>
+                <div class="filter-group" style="flex: 1;">
+                    <label><i class="fas fa-search"></i> Search</label>
+                    <div style="display: flex; gap: 0.5rem;">
                         <input type="text" name="search" class="search-input" placeholder="Name, email, specialization..." value="<?php echo htmlspecialchars($search); ?>">
                         <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
                         <?php if ($search || $specialization_filter != 'all' || $status_filter != 'all'): ?>
                             <a href="manage-doctors.php" class="btn btn-secondary"><i class="fas fa-times"></i> Clear</a>
                         <?php endif; ?>
-                    </div></div>
-                </form>
-            </div>
-
-            <!-- Doctors Grid -->
-            <?php if (count($doctors) > 0): ?>
-                <div class="doctors-grid">
-                    <?php foreach ($doctors as $doctor): ?>
-                        <div class="doctor-card">
-                            <div class="card-header">
-                                <div class="doctor-avatar"><?php echo strtoupper(substr($doctor['full_name'], 0, 1)); ?></div>
-                                <div class="doctor-info">
-                                    <h3>Dr. <?php echo htmlspecialchars($doctor['full_name']); ?></h3>
-                                    <p>@<?php echo htmlspecialchars($doctor['username']); ?></p>
-                                </div>
-                                <span class="badge badge-<?php echo $doctor['is_active'] ? 'active' : 'inactive'; ?>" style="margin-left: auto;">
-                                    <i class="fas <?php echo $doctor['is_active'] ? 'fa-check-circle' : 'fa-times-circle'; ?>"></i> <?php echo $doctor['is_active'] ? 'Active' : 'Inactive'; ?>
-                                </span>
-                            </div>
-                            <div class="card-body">
-                                <div class="info-row"><i class="fas fa-envelope"></i> <?php echo htmlspecialchars($doctor['email']); ?></div>
-                                <div class="info-row"><i class="fas fa-phone"></i> <?php echo htmlspecialchars($doctor['phone'] ?? 'N/A'); ?></div>
-                                <div class="info-row"><i class="fas fa-stethoscope"></i> <span class="badge badge-specialization"><?php echo htmlspecialchars($doctor['specialization']); ?></span></div>
-                                <div class="info-row"><i class="fas fa-graduation-cap"></i> <?php echo htmlspecialchars(substr($doctor['qualification'], 0, 40)) . (strlen($doctor['qualification'] ?? '') > 40 ? '...' : ''); ?></div>
-                                <div class="info-row"><i class="fas fa-briefcase"></i> <?php echo $doctor['experience_years']; ?> years experience</div>
-                                <div class="info-row"><i class="fas fa-dollar-sign"></i> <strong>$<?php echo number_format($doctor['consultation_fee'], 2); ?></strong> per consultation</div>
-                            </div>
-                            <div class="card-footer">
-                                <form method="POST" style="display:inline;">
-                                    <input type="hidden" name="doctor_id" value="<?php echo $doctor['id']; ?>">
-                                    <button type="submit" name="toggle_status" class="icon-btn" style="color: <?php echo $doctor['is_active'] ? '#f59e0b' : '#10b981'; ?>" title="<?php echo $doctor['is_active'] ? 'Deactivate' : 'Activate'; ?>">
-                                        <i class="fas <?php echo $doctor['is_active'] ? 'fa-ban' : 'fa-check-circle'; ?>"></i>
-                                    </button>
-                                </form>
-                                <button class="icon-btn" style="color: #3b82f6;" title="View Details" onclick='viewDoctor(<?php echo json_encode($doctor); ?>)'>
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <form method="POST" style="display:inline;" onsubmit="return confirm('⚠️ PERMANENT ACTION!\n\nDelete Dr. <?php echo addslashes($doctor['full_name']); ?>?\nAll associated data will be lost!')">
-                                    <input type="hidden" name="doctor_id" value="<?php echo $doctor['id']; ?>">
-                                    <button type="submit" name="delete_doctor" class="icon-btn" style="color: #dc2626;" title="Delete Doctor"><i class="fas fa-trash"></i></button>
-                                </form>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-
-                <!-- Pagination -->
-                <?php if ($total_pages > 1): ?>
-                    <div class="pagination">
-                        <?php if ($page > 1): ?>
-                            <a href="?page=<?php echo $page-1; ?>&specialization=<?php echo $specialization_filter; ?>&status=<?php echo $status_filter; ?>&search=<?php echo urlencode($search); ?>" class="page-link"><i class="fas fa-chevron-left"></i> Prev</a>
-                        <?php endif; ?>
-                        <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                            <a href="?page=<?php echo $i; ?>&specialization=<?php echo $specialization_filter; ?>&status=<?php echo $status_filter; ?>&search=<?php echo urlencode($search); ?>" class="page-link <?php echo $i == $page ? 'active' : ''; ?>"><?php echo $i; ?></a>
-                        <?php endfor; ?>
-                        <?php if ($page < $total_pages): ?>
-                            <a href="?page=<?php echo $page+1; ?>&specialization=<?php echo $specialization_filter; ?>&status=<?php echo $status_filter; ?>&search=<?php echo urlencode($search); ?>" class="page-link">Next <i class="fas fa-chevron-right"></i></a>
-                        <?php endif; ?>
                     </div>
-                <?php endif; ?>
-            <?php else: ?>
-                <div class="empty-state"><i class="fas fa-user-md-slash" style="font-size: 3rem; color: #cbd5e1;"></i><h3 style="margin-top: 1rem;">No Doctors Found</h3><p>No doctors match your search criteria.</p></div>
-            <?php endif; ?>
+                </div>
+            </form>
+        </div>
 
-            <div class="alert alert-info" style="margin-top: 1rem;">
-                <i class="fas fa-info-circle"></i>
-                <span><strong>Note:</strong> You can activate/deactivate doctors, view their full details, or remove them from the system. Deactivated doctors cannot be booked by patients.</span>
+        <!-- Doctors Grid -->
+        <?php if (count($doctors) > 0): ?>
+            <div class="doctors-grid">
+                <?php foreach ($doctors as $doctor): ?>
+                    <div class="doctor-card">
+                        <div class="card-header">
+                            <div class="doctor-avatar"><?php echo strtoupper(substr($doctor['full_name'], 0, 1)); ?></div>
+                            <div class="doctor-info">
+                                <h4>Dr. <?php echo htmlspecialchars($doctor['full_name']); ?></h4>
+                                <p>@<?php echo htmlspecialchars($doctor['username']); ?></p>
+                            </div>
+                            <span class="status-badge badge-<?php echo $doctor['is_active'] ? 'active' : 'inactive'; ?>">
+                                <i class="fas <?php echo $doctor['is_active'] ? 'fa-check-circle' : 'fa-times-circle'; ?>"></i>
+                                <?php echo $doctor['is_active'] ? 'Active' : 'Inactive'; ?>
+                            </span>
+                        </div>
+                        <div class="card-body">
+                            <div class="info-row"><i class="fas fa-envelope"></i> <?php echo htmlspecialchars($doctor['email']); ?></div>
+                            <div class="info-row"><i class="fas fa-phone"></i> <?php echo htmlspecialchars($doctor['phone'] ?? 'N/A'); ?></div>
+                            <div class="info-row"><i class="fas fa-stethoscope"></i> <span class="status-badge badge-spec"><?php echo htmlspecialchars($doctor['specialization']); ?></span></div>
+                            <div class="info-row"><i class="fas fa-graduation-cap"></i> <?php echo htmlspecialchars(substr($doctor['qualification'], 0, 35)); ?></div>
+                            <div class="info-row"><i class="fas fa-briefcase"></i> <?php echo $doctor['experience_years']; ?> years experience</div>
+                            <div class="info-row"><i class="fas fa-dollar-sign"></i> <strong>R<?php echo number_format($doctor['consultation_fee'], 2); ?></strong> per consultation</div>
+                        </div>
+                        <div class="card-footer">
+                            <form method="POST" style="display: inline;">
+                                <input type="hidden" name="doctor_id" value="<?php echo $doctor['id']; ?>">
+                                <button type="submit" name="toggle_status" class="action-btn" title="<?php echo $doctor['is_active'] ? 'Deactivate' : 'Activate'; ?>">
+                                    <i class="fas <?php echo $doctor['is_active'] ? 'fa-ban' : 'fa-check-circle'; ?>"></i>
+                                </button>
+                            </form>
+                            <button class="action-btn" onclick='viewDoctor(<?php echo json_encode($doctor); ?>)' title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <form method="POST" style="display: inline;" onsubmit="return confirm('⚠️ PERMANENT ACTION!\n\nDelete Dr. <?php echo addslashes($doctor['full_name']); ?>?\nAll associated data will be lost!')">
+                                <input type="hidden" name="doctor_id" value="<?php echo $doctor['id']; ?>">
+                                <button type="submit" name="delete_doctor" class="action-btn delete-btn" title="Delete Doctor">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
             </div>
+
+            <!-- Pagination -->
+            <?php if ($total_pages > 1): ?>
+                <div class="pagination">
+                    <?php if ($page > 1): ?>
+                        <a href="?page=<?php echo $page-1; ?>&specialization=<?php echo $specialization_filter; ?>&status=<?php echo $status_filter; ?>&search=<?php echo urlencode($search); ?>" class="page-link"><i class="fas fa-chevron-left"></i></a>
+                    <?php endif; ?>
+                    <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                        <a href="?page=<?php echo $i; ?>&specialization=<?php echo $specialization_filter; ?>&status=<?php echo $status_filter; ?>&search=<?php echo urlencode($search); ?>" class="page-link <?php echo $i == $page ? 'active' : ''; ?>"><?php echo $i; ?></a>
+                    <?php endfor; ?>
+                    <?php if ($page < $total_pages): ?>
+                        <a href="?page=<?php echo $page+1; ?>&specialization=<?php echo $specialization_filter; ?>&status=<?php echo $status_filter; ?>&search=<?php echo urlencode($search); ?>" class="page-link"><i class="fas fa-chevron-right"></i></a>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+        <?php else: ?>
+            <div class="empty-state">
+                <i class="fas fa-user-md-slash"></i>
+                <h3>No Doctors Found</h3>
+                <p>No doctors match your search criteria.</p>
+                <a href="manage-doctors.php" class="btn btn-primary" style="margin-top: 1rem;"><i class="fas fa-sync-alt"></i> Clear Filters</a>
+            </div>
+        <?php endif; ?>
+
+        <!-- Info Note -->
+        <div class="alert-info">
+            <i class="fas fa-info-circle"></i>
+            <span><strong>Note:</strong> You can activate/deactivate doctors, view their full details, or remove them from the system. Deactivated doctors cannot be booked by patients.</span>
         </div>
     </div>
 
     <!-- Doctor Details Modal -->
     <div id="doctorModal" class="modal">
         <div class="modal-content">
-            <div class="modal-header"><i class="fas fa-user-md"></i> Doctor Details</div>
+            <div class="modal-header">
+                <i class="fas fa-user-md"></i> Doctor Details
+                <span style="cursor: pointer; margin-left: auto; font-size: 1.2rem;" onclick="closeModal()">&times;</span>
+            </div>
             <div class="modal-body" id="doctorDetails"></div>
-            <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal()">Close</button></div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+            </div>
         </div>
     </div>
 
     <script>
+        document.documentElement.style.setProperty('--primary', '#8B5CF6');
+        document.documentElement.style.setProperty('--primary-dark', '#7C3AED');
+
         function viewDoctor(doctor) {
             const modal = document.getElementById('doctorModal');
             const detailsDiv = document.getElementById('doctorDetails');
@@ -679,18 +892,26 @@ $stats = $stats_stmt->fetch(PDO::FETCH_ASSOC);
                 <div class="detail-row"><div class="detail-label">Email:</div><div class="detail-value">${doctor.email}</div></div>
                 <div class="detail-row"><div class="detail-label">Phone:</div><div class="detail-value">${doctor.phone || 'N/A'}</div></div>
                 <div class="detail-row"><div class="detail-label">Address:</div><div class="detail-value">${doctor.address || 'N/A'}</div></div>
-                <div class="detail-row"><div class="detail-label">Specialization:</div><div class="detail-value"><span class="badge badge-specialization">${doctor.specialization}</span></div></div>
+                <div class="detail-row"><div class="detail-label">Specialization:</div><div class="detail-value"><span class="status-badge badge-spec">${doctor.specialization}</span></div></div>
                 <div class="detail-row"><div class="detail-label">Qualification:</div><div class="detail-value">${doctor.qualification}</div></div>
                 <div class="detail-row"><div class="detail-label">Experience:</div><div class="detail-value">${doctor.experience_years} years</div></div>
-                <div class="detail-row"><div class="detail-label">Consultation Fee:</div><div class="detail-value"><strong>$${parseFloat(doctor.consultation_fee).toFixed(2)}</strong></div></div>
+                <div class="detail-row"><div class="detail-label">Consultation Fee:</div><div class="detail-value"><strong>R${parseFloat(doctor.consultation_fee).toFixed(2)}</strong></div></div>
                 <div class="detail-row"><div class="detail-label">Available Days:</div><div class="detail-value">${doctor.available_days || 'Not set'}</div></div>
                 <div class="detail-row"><div class="detail-label">Working Hours:</div><div class="detail-value">${doctor.available_time_start || 'N/A'} - ${doctor.available_time_end || 'N/A'}</div></div>
                 <div class="detail-row"><div class="detail-label">Member Since:</div><div class="detail-value">${new Date(doctor.created_at).toLocaleDateString()}</div></div>
+                <div class="detail-row"><div class="detail-label">Status:</div><div class="detail-value"><span class="status-badge ${doctor.is_active ? 'badge-active' : 'badge-inactive'}">${doctor.is_active ? 'Active' : 'Inactive'}</span></div></div>
             `;
             modal.classList.add('active');
         }
-        function closeModal() { document.getElementById('doctorModal').classList.remove('active'); }
-        window.onclick = function(event) { if (event.target == document.getElementById('doctorModal')) closeModal(); }
+
+        function closeModal() {
+            document.getElementById('doctorModal').classList.remove('active');
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('doctorModal');
+            if (event.target == modal) closeModal();
+        }
     </script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 <?php
 require_once '../config/database.php';
-require_once '../includes/session.php';
+require_once '../includes/SessionManager.php';
 
 SessionManager::requireRole('doctor');
 $database = new Database();

@@ -1,5 +1,5 @@
 <?php
-// patient/profile.php - Patient Profile with modern medical UI
+// patient/profile.php - Completely Redesigned Patient Profile Interface
 require_once '../config/database.php';
 require_once '../includes/SessionManager.php';
 
@@ -48,13 +48,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_profile'])) {
     $address = htmlspecialchars(strip_tags(trim($_POST['address'])));
     $email = htmlspecialchars(strip_tags(trim($_POST['email'])));
     
-    // Validate email
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = "Please enter a valid email address.";
     } elseif (empty($full_name)) {
         $error = "Full name is required.";
     } else {
-        // Check if email already exists for another user
         $checkQuery = "SELECT id FROM users WHERE email = :email AND id != :user_id";
         $checkStmt = $db->prepare($checkQuery);
         $checkStmt->bindParam(':email', $email);
@@ -74,10 +72,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_profile'])) {
             
             if ($updateStmt->execute()) {
                 $success = "Profile updated successfully!";
-                // Refresh user data
                 $stmt->execute();
                 $user = $stmt->fetch(PDO::FETCH_ASSOC);
-                // Update session name
                 $_SESSION['full_name'] = $full_name;
             } else {
                 $error = "Failed to update profile. Please try again.";
@@ -99,7 +95,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
     } elseif (strlen($new_password) < 8) {
         $error = "Password must be at least 8 characters long.";
     } else {
-        // Verify current password
         $passQuery = "SELECT password FROM users WHERE id = :user_id";
         $passStmt = $db->prepare($passQuery);
         $passStmt->bindParam(':user_id', $user_id);
@@ -129,33 +124,85 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Profile | MediFlow HMS</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
+        /* Design Variables */
+        :root {
+            --bg-main: #0A0C15;
+            --surface-card: rgba(18, 22, 33, 0.75);
+            --border-color: rgba(255, 255, 255, 0.06);
+            --text-main: #F3F4F6;
+            --text-muted: #9CA3AF;
+            --primary: #6366F1;
+            --primary-dark: #4F46E5;
+            --primary-glow: rgba(99, 102, 241, 0.2);
+            --accent: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --info: #3B82F6;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
+            background: var(--bg-main);
+            color: var(--text-main);
             min-height: 100vh;
+            position: relative;
         }
 
-        /* Modern Navbar */
+        /* Animated Background */
+        .bg-orb-1 {
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            top: -100px;
+            right: -100px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .bg-orb-2 {
+            position: fixed;
+            width: 500px;
+            height: 500px;
+            bottom: -150px;
+            left: -150px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.06) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+            animation: float 25s ease-in-out infinite reverse;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(30px, -30px); }
+        }
+
+        /* Navbar */
         .navbar {
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-            padding: 0.75rem 0;
             position: sticky;
             top: 0;
-            z-index: 1000;
-            border-bottom: 1px solid rgba(37, 99, 235, 0.1);
+            z-index: 100;
+            background: rgba(10, 12, 21, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.75rem 0;
         }
 
         .navbar-container {
@@ -165,182 +212,216 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
 
         .logo {
-            font-size: 1.5rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #1e3a5f, #2563eb);
+            font-size: 1.4rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #FFF, var(--primary));
             -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
+            -webkit-text-fill-color: transparent;
             text-decoration: none;
             display: flex;
             align-items: center;
             gap: 0.5rem;
-        }
-
-        .logo i {
-            background: linear-gradient(135deg, #1e3a5f, #2563eb);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
         }
 
         .nav-menu {
             display: flex;
             gap: 0.5rem;
             list-style: none;
-            align-items: center;
+            flex-wrap: wrap;
         }
 
         .nav-link {
             text-decoration: none;
-            color: #475569;
+            color: var(--text-muted);
             font-weight: 500;
             transition: all 0.3s;
             padding: 0.5rem 1rem;
             border-radius: 12px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
 
         .nav-link:hover, .nav-link.active {
-            color: #2563eb;
-            background: #eff6ff;
+            color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
         }
 
-        /* Main Container */
-        .container {
-            max-width: 1400px;
-            margin: 2rem auto;
+        /* Main Layout */
+        .profile-wrapper {
+            position: relative;
+            z-index: 2;
+            max-width: 1200px;
+            margin: 1.5rem auto;
             padding: 0 2rem;
         }
 
-        /* Profile Layout */
-        .profile-grid {
-            display: grid;
-            grid-template-columns: 320px 1fr;
-            gap: 2rem;
+        /* Top Bar */
+        .top-bar {
+            margin-bottom: 2rem;
         }
 
-        /* Profile Sidebar */
-        .profile-sidebar {
-            background: white;
+        .top-bar h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #FFF, var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .top-bar p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+        }
+
+        /* Two Column Layout */
+        .profile-layout {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 1.5rem;
+        }
+
+        /* Left Panel - Profile Card */
+        .profile-card {
+            background: rgba(18, 22, 33, 0.5);
+            border: 1px solid var(--border-color);
             border-radius: 28px;
-            padding: 2rem 1.5rem;
+            padding: 1.5rem;
             text-align: center;
-            border: 1px solid rgba(37, 99, 235, 0.08);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
             position: sticky;
             top: 90px;
-            height: fit-content;
         }
 
-        .profile-avatar {
-            width: 120px;
-            height: 120px;
-            background: linear-gradient(135deg, #2563eb, #3b82f6);
-            border-radius: 60px;
+        .avatar {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 50px;
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 0 auto 1rem;
-            font-size: 3rem;
+            font-size: 2.5rem;
             font-weight: 700;
-            color: white;
-            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+            box-shadow: 0 8px 20px var(--primary-glow);
         }
 
-        .profile-name {
-            font-size: 1.35rem;
-            font-weight: 700;
-            color: #1e293b;
+        .profile-card h3 {
+            font-size: 1.2rem;
             margin-bottom: 0.25rem;
         }
 
-        .profile-role {
+        .role-badge {
             display: inline-block;
-            background: #dbeafe;
-            color: #2563eb;
+            background: rgba(99, 102, 241, 0.15);
             padding: 0.25rem 1rem;
             border-radius: 40px;
-            font-size: 0.75rem;
-            font-weight: 600;
+            font-size: 0.7rem;
+            color: var(--primary);
             margin-bottom: 1rem;
         }
 
         .member-since {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            padding: 0.75rem;
+            font-size: 0.7rem;
+            color: var(--text-muted);
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
-            font-size: 0.75rem;
-            color: #64748b;
-            padding: 0.75rem;
-            background: #f8fafc;
-            border-radius: 16px;
-            margin: 1rem 0;
+            margin-bottom: 1.5rem;
         }
 
-        /* Stats in Sidebar */
-        .sidebar-stats {
+        .stats-list {
             text-align: left;
-            margin-top: 1rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 1rem;
         }
 
-        .stat-row {
+        .stat-item {
             display: flex;
             justify-content: space-between;
-            align-items: center;
             padding: 0.75rem 0;
-            border-bottom: 1px solid #eef2ff;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
         }
 
-        .stat-row:last-child {
+        .stat-item:last-child {
             border-bottom: none;
         }
 
-        .stat-row span:first-child {
-            color: #64748b;
-            font-size: 0.8rem;
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.75rem;
         }
 
-        .stat-row span:last-child {
+        .stat-value {
             font-weight: 700;
-            color: #1e293b;
+            color: var(--primary);
         }
 
-        /* Main Content Cards */
-        .card {
-            background: white;
+        /* Right Panel - Tabs */
+        .tabs-container {
+            background: rgba(18, 22, 33, 0.5);
+            border: 1px solid var(--border-color);
             border-radius: 28px;
-            padding: 1.75rem;
-            margin-bottom: 1.5rem;
-            border: 1px solid rgba(37, 99, 235, 0.08);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            overflow: hidden;
         }
 
-        .card-header {
+        .tabs-header {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: none;
+            border: none;
+            padding: 1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            margin-bottom: 1.5rem;
-            padding-bottom: 0.75rem;
-            border-bottom: 2px solid #eef2ff;
+            justify-content: center;
+            gap: 0.5rem;
         }
 
-        .card-header i {
-            font-size: 1.25rem;
-            color: #2563eb;
+        .tab-btn:hover {
+            color: var(--primary);
+            background: rgba(99, 102, 241, 0.05);
         }
 
-        .card-header h2 {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: #1e293b;
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary);
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .tab-pane {
+            display: none;
+            padding: 1.75rem;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         /* Form Styles */
@@ -353,49 +434,53 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
             align-items: center;
             gap: 0.5rem;
             margin-bottom: 0.5rem;
+            font-size: 0.75rem;
             font-weight: 600;
-            color: #334155;
-            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .form-label i {
-            color: #2563eb;
-            width: 18px;
+            color: var(--primary);
         }
 
         .form-control {
             width: 100%;
             padding: 0.85rem 1rem;
-            background: #f8fafc;
-            border: 1.5px solid #e2e8f0;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
             border-radius: 16px;
             font-size: 0.9rem;
-            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
             transition: all 0.2s;
-            color: #1e293b;
         }
 
         .form-control:focus {
             outline: none;
-            border-color: #2563eb;
-            background: white;
-            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 0 3px var(--primary-glow);
         }
 
         .form-control:disabled {
-            background: #f1f5f9;
-            color: #94a3b8;
+            opacity: 0.5;
             cursor: not-allowed;
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 80px;
         }
 
         /* Buttons */
         .btn {
             padding: 0.75rem 1.5rem;
             border: none;
-            border-radius: 16px;
-            cursor: pointer;
+            border-radius: 14px;
             font-size: 0.85rem;
             font-weight: 600;
+            cursor: pointer;
             transition: all 0.2s;
             display: inline-flex;
             align-items: center;
@@ -403,32 +488,73 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 14px rgba(37, 99, 235, 0.3);
+            filter: brightness(1.05);
         }
 
         .btn-outline {
             background: transparent;
-            border: 1.5px solid #2563eb;
-            color: #2563eb;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
         }
 
         .btn-outline:hover {
-            background: #eff6ff;
+            border-color: var(--primary);
+            color: var(--primary);
         }
 
-        .btn-danger {
-            background: #fee2e2;
-            color: #dc2626;
+        /* Password Requirements */
+        .requirements-box {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 16px;
+            padding: 1rem;
+            margin-top: 1rem;
         }
 
-        .btn-danger:hover {
-            background: #fecaca;
+        .requirements-box h4 {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .requirement {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0.25rem 0;
+        }
+
+        .requirement.valid {
+            color: var(--accent);
+        }
+
+        /* Health Summary */
+        .health-summary {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .health-icon {
+            font-size: 3rem;
+            color: var(--primary);
+            opacity: 0.5;
+            margin-bottom: 1rem;
+        }
+
+        .health-tip {
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.15);
+            border-radius: 20px;
+            padding: 1rem;
+            margin-top: 1.5rem;
+            text-align: left;
         }
 
         /* Alerts */
@@ -439,143 +565,69 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            animation: slideDown 0.3s ease-out;
+            animation: slideDown 0.3s ease;
         }
 
         .alert-success {
-            background: #d1fae5;
-            color: #065f46;
-            border-left: 4px solid #10b981;
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 3px solid var(--accent);
+            color: #A7F3D0;
         }
 
         .alert-error {
-            background: #fee2e2;
-            color: #991b1b;
-            border-left: 4px solid #dc2626;
+            background: rgba(239, 68, 68, 0.1);
+            border-left: 3px solid var(--danger);
+            color: #FCA5A5;
         }
 
         @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Tabs */
-        .profile-tabs {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1.5rem;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .tab-btn {
-            background: none;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: #64748b;
-            cursor: pointer;
-            transition: all 0.2s;
-            border-bottom: 2px solid transparent;
-        }
-
-        .tab-btn.active {
-            color: #2563eb;
-            border-bottom-color: #2563eb;
-        }
-
-        .tab-btn:hover:not(.active) {
-            color: #1e293b;
-        }
-
-        .tab-pane {
-            display: none;
-        }
-
-        .tab-pane.active {
-            display: block;
-            animation: fadeIn 0.3s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        /* Password Requirements */
-        .password-requirements {
-            background: #f8fafc;
-            border-radius: 16px;
-            padding: 1rem;
-            margin-top: 1rem;
-        }
-
-        .requirements-title {
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: #64748b;
-            margin-bottom: 0.5rem;
-        }
-
-        .requirement {
-            font-size: 0.7rem;
-            color: #94a3b8;
-            margin: 0.25rem 0;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .requirement.valid {
-            color: #10b981;
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         /* Responsive */
-        @media (max-width: 968px) {
-            .profile-grid {
+        @media (max-width: 900px) {
+            .profile-layout {
                 grid-template-columns: 1fr;
             }
-            
-            .profile-sidebar {
+            .profile-card {
                 position: static;
-                margin-bottom: 1.5rem;
+            }
+            .tabs-header {
+                flex-wrap: wrap;
+            }
+            .tab-btn {
+                flex: auto;
             }
         }
 
         @media (max-width: 768px) {
             .navbar-container {
                 flex-direction: column;
-                gap: 1rem;
                 padding: 0 1rem;
             }
             .nav-menu {
-                flex-wrap: wrap;
                 justify-content: center;
             }
-            .container {
+            .profile-wrapper {
                 padding: 0 1rem;
             }
-            .card {
+            .tab-pane {
                 padding: 1.25rem;
-            }
-            .profile-tabs {
-                flex-wrap: wrap;
             }
         }
     </style>
 </head>
 <body>
+
+    <div class="bg-orb-1"></div>
+    <div class="bg-orb-2"></div>
+
     <nav class="navbar">
         <div class="navbar-container">
             <a href="dashboard.php" class="logo">
-                <i class="fas fa-heartbeat"></i>
-                <span>MediFlow HMS</span>
+                <i class="fas fa-heart-pulse"></i>
+                <span>Hospital System</span>
             </a>
             <ul class="nav-menu">
                 <li><a href="dashboard.php" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a></li>
@@ -588,211 +640,193 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
         </div>
     </nav>
 
-    <div class="container">
+    <div class="profile-wrapper">
+        <div class="top-bar">
+            <h1><i class="fas fa-user-circle"></i> My Profile</h1>
+            <p>Manage your personal information and account settings</p>
+        </div>
+
         <?php if ($success): ?>
             <div class="alert alert-success">
-                <i class="fas fa-check-circle fa-lg"></i>
+                <i class="fas fa-check-circle"></i>
                 <span><?php echo htmlspecialchars($success); ?></span>
             </div>
         <?php endif; ?>
         
         <?php if ($error): ?>
             <div class="alert alert-error">
-                <i class="fas fa-exclamation-triangle fa-lg"></i>
+                <i class="fas fa-exclamation-triangle"></i>
                 <span><?php echo htmlspecialchars($error); ?></span>
             </div>
         <?php endif; ?>
-        
-        <div class="profile-grid">
-            <!-- Sidebar -->
-            <div class="profile-sidebar">
-                <div class="profile-avatar">
+
+        <div class="profile-layout">
+            <!-- Left Panel -->
+            <div class="profile-card">
+                <div class="avatar">
                     <?php echo strtoupper(substr($user['full_name'], 0, 1)); ?>
                 </div>
-                <h3 class="profile-name"><?php echo htmlspecialchars($user['full_name']); ?></h3>
-                <span class="profile-role"><i class="fas fa-user-injured"></i> Patient</span>
+                <h3><?php echo htmlspecialchars($user['full_name']); ?></h3>
+                <span class="role-badge"><i class="fas fa-user-injured"></i> Patient</span>
                 
                 <div class="member-since">
                     <i class="fas fa-calendar-alt"></i>
-                    <span>Member since <?php echo date('M Y', strtotime($user['created_at'])); ?></span>
+                    <span>Joined <?php echo date('M Y', strtotime($user['created_at'])); ?></span>
                 </div>
-                
-                <div class="sidebar-stats">
-                    <div class="stat-row">
-                        <span><i class="fas fa-calendar-check"></i> Total Appointments</span>
-                        <span><?php echo $stats['total_appointments'] ?? 0; ?></span>
+
+                <div class="stats-list">
+                    <div class="stat-item">
+                        <span class="stat-label">Total Appointments</span>
+                        <span class="stat-value"><?php echo $stats['total_appointments'] ?? 0; ?></span>
                     </div>
-                    <div class="stat-row">
-                        <span><i class="fas fa-check-circle"></i> Completed Visits</span>
-                        <span><?php echo $stats['completed'] ?? 0; ?></span>
+                    <div class="stat-item">
+                        <span class="stat-label">Completed Visits</span>
+                        <span class="stat-value"><?php echo $stats['completed'] ?? 0; ?></span>
                     </div>
-                    <div class="stat-row">
-                        <span><i class="fas fa-clock"></i> Pending</span>
-                        <span><?php echo $stats['pending'] ?? 0; ?></span>
-                    </div>
-                    <div class="stat-row">
-                        <span><i class="fas fa-calendar-week"></i> Upcoming</span>
-                        <span><?php echo $stats['upcoming'] ?? 0; ?></span>
+                    <div class="stat-item">
+                        <span class="stat-label">Upcoming</span>
+                        <span class="stat-value"><?php echo $stats['upcoming'] ?? 0; ?></span>
                     </div>
                     <?php if ($last_appointment): ?>
-                    <div class="stat-row">
-                        <span><i class="fas fa-history"></i> Last Visit</span>
-                        <span><?php echo date('M d, Y', strtotime($last_appointment['appointment_date'])); ?></span>
+                    <div class="stat-item">
+                        <span class="stat-label">Last Visit</span>
+                        <span class="stat-value"><?php echo date('M d, Y', strtotime($last_appointment['appointment_date'])); ?></span>
                     </div>
                     <?php endif; ?>
                 </div>
             </div>
-            
-            <!-- Main Content -->
-            <div>
-                <div class="card">
-                    <div class="profile-tabs">
-                        <button class="tab-btn active" data-tab="personal">
-                            <i class="fas fa-user-edit"></i> Personal Info
-                        </button>
-                        <button class="tab-btn" data-tab="security">
-                            <i class="fas fa-lock"></i> Security
-                        </button>
-                        <button class="tab-btn" data-tab="health">
-                            <i class="fas fa-heartbeat"></i> Health Summary
-                        </button>
-                    </div>
-                    
-                    <!-- Personal Info Tab -->
-                    <div id="personal" class="tab-pane active">
-                        <form method="POST" action="">
-                            <div class="form-group">
-                                <label class="form-label">
-                                    <i class="fas fa-user"></i> Full Name
-                                </label>
-                                <input type="text" name="full_name" class="form-control" value="<?php echo htmlspecialchars($user['full_name']); ?>" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="form-label">
-                                    <i class="fas fa-envelope"></i> Email Address
-                                </label>
-                                <input type="email" name="email" class="form-control" value="<?php echo htmlspecialchars($user['email']); ?>" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="form-label">
-                                    <i class="fas fa-phone"></i> Phone Number
-                                </label>
-                                <input type="tel" name="phone" class="form-control" value="<?php echo htmlspecialchars($user['phone'] ?? ''); ?>" placeholder="+1 (555) 000-0000">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="form-label">
-                                    <i class="fas fa-map-marker-alt"></i> Address
-                                </label>
-                                <textarea name="address" class="form-control" rows="3" placeholder="Your full address"><?php echo htmlspecialchars($user['address'] ?? ''); ?></textarea>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="form-label">
-                                    <i class="fas fa-user-tag"></i> Username
-                                </label>
-                                <input type="text" class="form-control" value="<?php echo htmlspecialchars($user['username']); ?>" disabled>
-                                <small style="color: #94a3b8; font-size: 0.7rem;">Username cannot be changed</small>
-                            </div>
-                            
-                            <button type="submit" name="update_profile" class="btn btn-primary">
-                                <i class="fas fa-save"></i> Save Changes
-                            </button>
-                        </form>
-                    </div>
-                    
-                    <!-- Security Tab -->
-                    <div id="security" class="tab-pane">
-                        <form method="POST" action="">
-                            <div class="form-group">
-                                <label class="form-label">
-                                    <i class="fas fa-lock"></i> Current Password
-                                </label>
-                                <input type="password" name="current_password" class="form-control" placeholder="Enter your current password" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="form-label">
-                                    <i class="fas fa-key"></i> New Password
-                                </label>
-                                <input type="password" name="new_password" id="new_password" class="form-control" placeholder="Enter new password" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="form-label">
-                                    <i class="fas fa-check-circle"></i> Confirm New Password
-                                </label>
-                                <input type="password" name="confirm_password" id="confirm_password" class="form-control" placeholder="Confirm new password" required>
-                            </div>
-                            
-                            <div class="password-requirements">
-                                <div class="requirements-title">Password Requirements:</div>
-                                <div class="requirement" id="req-length">
-                                    <i class="fas fa-circle"></i> At least 8 characters
-                                </div>
-                                <div class="requirement" id="req-match">
-                                    <i class="fas fa-circle"></i> Passwords match
-                                </div>
-                            </div>
-                            
-                            <button type="submit" name="change_password" class="btn btn-primary">
-                                <i class="fas fa-sync-alt"></i> Update Password
-                            </button>
-                        </form>
-                    </div>
-                    
-                    <!-- Health Summary Tab -->
-                    <div id="health" class="tab-pane">
-                        <div style="text-align: center; padding: 1rem 0;">
-                            <i class="fas fa-chart-line" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 1rem; display: block;"></i>
-                            <h3 style="color: #1e293b; margin-bottom: 0.5rem;">Health Dashboard Coming Soon</h3>
-                            <p style="color: #64748b; margin-bottom: 1.5rem;">Track your health metrics, view trends, and get personalized insights.</p>
-                            <a href="medical-records.php" class="btn btn-outline">
-                                <i class="fas fa-notes-medical"></i> View Medical Records
-                            </a>
+
+            <!-- Right Panel -->
+            <div class="tabs-container">
+                <div class="tabs-header">
+                    <button class="tab-btn active" data-tab="personal">
+                        <i class="fas fa-user-edit"></i> Personal Info
+                    </button>
+                    <button class="tab-btn" data-tab="security">
+                        <i class="fas fa-lock"></i> Security
+                    </button>
+                    <button class="tab-btn" data-tab="health">
+                        <i class="fas fa-heartbeat"></i> Health
+                    </button>
+                </div>
+
+                <!-- Personal Info Tab -->
+                <div id="personal" class="tab-pane active">
+                    <form method="POST" action="">
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-user"></i> Full Name</label>
+                            <input type="text" name="full_name" class="form-control" value="<?php echo htmlspecialchars($user['full_name']); ?>" required>
                         </div>
                         
-                        <!-- Quick health tips -->
-                        <div style="margin-top: 1.5rem; background: #f0fdf4; border-radius: 20px; padding: 1rem;">
-                            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-                                <i class="fas fa-leaf" style="color: #22c55e;"></i>
-                                <strong style="color: #166534;">Health Tip</strong>
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-envelope"></i> Email Address</label>
+                            <input type="email" name="email" class="form-control" value="<?php echo htmlspecialchars($user['email']); ?>" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-phone"></i> Phone Number</label>
+                            <input type="tel" name="phone" class="form-control" value="<?php echo htmlspecialchars($user['phone'] ?? ''); ?>" placeholder="+1 (555) 000-0000">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-map-marker-alt"></i> Address</label>
+                            <textarea name="address" class="form-control" rows="3" placeholder="Your full address"><?php echo htmlspecialchars($user['address'] ?? ''); ?></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-user-tag"></i> Username</label>
+                            <input type="text" class="form-control" value="<?php echo htmlspecialchars($user['username']); ?>" disabled>
+                            <small style="color: var(--text-muted); font-size: 0.7rem;">Username cannot be changed</small>
+                        </div>
+                        
+                        <button type="submit" name="update_profile" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Security Tab -->
+                <div id="security" class="tab-pane">
+                    <form method="POST" action="">
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-lock"></i> Current Password</label>
+                            <input type="password" name="current_password" class="form-control" placeholder="Enter your current password" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-key"></i> New Password</label>
+                            <input type="password" name="new_password" id="new_password" class="form-control" placeholder="Enter new password" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-check-circle"></i> Confirm Password</label>
+                            <input type="password" name="confirm_password" id="confirm_password" class="form-control" placeholder="Confirm new password" required>
+                        </div>
+                        
+                        <div class="requirements-box">
+                            <h4>Password Requirements:</h4>
+                            <div class="requirement" id="req-length">
+                                <i class="fas fa-circle"></i> At least 8 characters
                             </div>
-                            <p style="color: #475569; font-size: 0.85rem;">Regular health check-ups can help detect potential issues early. Schedule your next preventive visit today!</p>
+                            <div class="requirement" id="req-match">
+                                <i class="fas fa-circle"></i> Passwords match
+                            </div>
+                        </div>
+                        
+                        <button type="submit" name="change_password" class="btn btn-primary">
+                            <i class="fas fa-sync-alt"></i> Update Password
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Health Tab -->
+                <div id="health" class="tab-pane">
+                    <div class="health-summary">
+                        <div class="health-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h3 style="margin-bottom: 0.5rem;">Health Dashboard</h3>
+                        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Track your health metrics and view insights</p>
+                        
+                        <a href="medical-records.php" class="btn btn-outline">
+                            <i class="fas fa-notes-medical"></i> View Medical Records
+                        </a>
+                        
+                        <div class="health-tip">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                <i class="fas fa-leaf" style="color: var(--accent);"></i>
+                                <strong>Health Tip</strong>
+                            </div>
+                            <p style="font-size: 0.8rem; color: var(--text-muted);">Regular health check-ups help detect issues early. Schedule your next preventive visit today!</p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <script>
-        // Tab switching functionality
+        // Tab switching
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 const tabId = this.getAttribute('data-tab');
                 
-                // Update active tab button
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
                 
-                // Update active pane
                 document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
                 document.getElementById(tabId).classList.add('active');
             });
         });
-        
+
         // Password validation
-        const newPassword = document.getElementById('new_password');
-        const confirmPassword = document.getElementById('confirm_password');
+        const newPass = document.getElementById('new_password');
+        const confirmPass = document.getElementById('confirm_password');
         const reqLength = document.getElementById('req-length');
         const reqMatch = document.getElementById('req-match');
-        
+
         function validatePassword() {
-            // Length check
-            if (newPassword.value.length >= 8) {
+            if (newPass.value.length >= 8) {
                 reqLength.classList.add('valid');
                 reqLength.innerHTML = '<i class="fas fa-check-circle"></i> At least 8 characters';
             } else {
@@ -800,8 +834,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
                 reqLength.innerHTML = '<i class="fas fa-circle"></i> At least 8 characters';
             }
             
-            // Match check
-            if (confirmPassword.value.length > 0 && newPassword.value === confirmPassword.value) {
+            if (confirmPass.value.length > 0 && newPass.value === confirmPass.value) {
                 reqMatch.classList.add('valid');
                 reqMatch.innerHTML = '<i class="fas fa-check-circle"></i> Passwords match';
             } else {
@@ -809,13 +842,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
                 reqMatch.innerHTML = '<i class="fas fa-circle"></i> Passwords match';
             }
         }
-        
-        if (newPassword) {
-            newPassword.addEventListener('input', validatePassword);
-        }
-        if (confirmPassword) {
-            confirmPassword.addEventListener('input', validatePassword);
-        }
+
+        if (newPass) newPass.addEventListener('input', validatePassword);
+        if (confirmPass) confirmPass.addEventListener('input', validatePassword);
     </script>
 </body>
 </html>

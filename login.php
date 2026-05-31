@@ -1,5 +1,6 @@
+
 <?php
-// login.php - Enhanced login page with role-based redirection & modern medical UI
+// login.php - Re-imagined Next-Gen Interface for Hospital Appointment & Patient Management
 session_start(); // MUST be at the very top
 
 require_once 'config/database.php';
@@ -13,7 +14,7 @@ $auth = new Auth($db);
 
 $error = '';
 $success = '';
-$selectedRole = '';
+$selectedRole = isset($_POST['role']) ? $_POST['role'] : 'patient';
 
 // Check if user is already logged in, redirect to appropriate dashboard
 if ($auth->isLoggedIn()) {
@@ -37,7 +38,7 @@ if ($auth->isLoggedIn()) {
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $username = htmlspecialchars(strip_tags(trim($_POST['username'])));
     $password = $_POST['password'];
-    $selectedRole = $_POST['role'] ?? '';
+    $selectedRole = $_POST['role'] ?? 'patient';
     
     // Validate role selection
     $validRoles = ['admin', 'doctor', 'patient'];
@@ -78,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             } else {
                 // Role mismatch - log out and show error
                 $auth->logout();
-                $error = "Invalid user type selection. You are registered as a " . ucfirst($userRole) . ". Please select the correct user type.";
+                $error = "Access denied. Your profile is assigned to the " . ucfirst($userRole) . " portal.";
             }
         } else {
             $error = $result['message'];
@@ -91,590 +92,775 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>MediFlow | Hospital Management System</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediFlow Platform Gateway</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
+        /* Modern System Design Variables — Handles dynamic interface colors smoothly */
+        :root {
+            --bg-main: #090B11;
+            --surface-card: rgba(18, 22, 33, 0.65);
+            --border-color: rgba(255, 255, 255, 0.06);
+            --text-main: #F3F4F6;
+            --text-muted: #9CA3AF;
+            
+            /* Dynamic Theme Profiles (Mutates smoothly via JavaScript) */
+            --primary: #6366F1;     /* Interactive Violet */
+            --primary-glow: rgba(99, 102, 241, 0.15);
+            --accent: #10B981;      /* Emerald Detail */
+            --gradient-angle: 135deg;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
 
         body {
-            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
             min-height: 100vh;
-            background: url('https://images.unsplash.com/photo-1579684385127-1ef15d508118?q=80&w=2080&auto=format&fit=crop') no-repeat center center/cover;
-            background-attachment: fixed;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 1.5rem;
+            overflow-x: hidden;
             position: relative;
         }
 
-        /* Premium dark overlay for readability and depth */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, rgba(15, 25, 45, 0.75) 0%, rgba(10, 20, 40, 0.85) 100%);
-            backdrop-filter: blur(3px);
-            z-index: 0;
+        /* Ambient Fluid Background Elements */
+        .ambient-glow-1 {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            top: -150px;
+            left: -100px;
+            background: radial-gradient(circle, var(--primary-glow) 0%, rgba(0,0,0,0) 70%);
+            z-index: 1;
+            transition: background 0.5s ease;
         }
 
-        /* Main card container — realistic glassmorphism with subtle shadow */
-        .login-container {
+        .ambient-glow-2 {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            bottom: -200px;
+            right: -100px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, rgba(0,0,0,0) 70%);
+            z-index: 1;
+        }
+
+        /* Split-Screen Framework Container */
+        .gateway-wrapper {
             position: relative;
             z-index: 2;
-            max-width: 520px;
             width: 100%;
-            background: rgba(255, 255, 255, 0.96);
-            border-radius: 36px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255,255,255,0.2) inset;
-            transition: transform 0.25s ease;
+            max-width: 1180px;
+            min-height: 720px;
+            margin: 2rem;
+            background: var(--surface-card);
+            border: 1px solid var(--border-color);
+            border-radius: 32px;
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
             overflow: hidden;
         }
 
-        .login-container:hover {
-            transform: translateY(-3px);
+        /* Right Side: Interactive Branding Visual Space */
+        .showcase-pane {
+            position: relative;
+            background: linear-gradient(var(--gradient-angle), #111422 0%, #0B0D17 100%);
+            border-left: 1px solid var(--border-color);
+            padding: 3.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
         }
 
-        /* Header with medical branding */
-        .brand-header {
-            background: linear-gradient(115deg, #0B2B40 0%, #1A4B6E 100%);
-            padding: 1.8rem 1.8rem 1.5rem;
-            text-align: center;
-            color: white;
+        .showcase-pane::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 70% 30%, var(--primary-glow) 0%, transparent 60%);
+            opacity: 0.8;
+            transition: background 0.5s ease;
+            z-index: 1;
+        }
+
+        .brand-identity {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            gap: 14px;
         }
 
         .brand-icon {
-            font-size: 3.2rem;
-            background: rgba(255,255,255,0.15);
-            width: 75px;
-            height: 75px;
-            line-height: 75px;
-            border-radius: 60px;
-            margin: 0 auto 1rem;
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary) 0%, #3B82F6 100%);
+            border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
-            backdrop-filter: blur(4px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            color: #FFF;
+            font-size: 1.4rem;
+            box-shadow: 0 8px 20px var(--primary-glow);
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        .brand-icon i {
-            font-size: 2.8rem;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        .brand-icon:hover {
+            transform: scale(1.08) rotate(5deg);
         }
 
-        .brand-header h1 {
-            font-weight: 700;
-            font-size: 1.85rem;
-            letter-spacing: -0.3px;
-            margin-bottom: 0.3rem;
+        .brand-name {
+            font-size: 1.4rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(120deg, #FFF 40%, var(--text-muted) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
-        .brand-header p {
-            font-weight: 400;
-            font-size: 0.9rem;
-            opacity: 0.85;
+        .showcase-content {
+            position: relative;
+            z-index: 2;
+            margin-bottom: 2rem;
         }
 
-        /* Main form area */
-        .form-wrapper {
-            padding: 2rem 2rem 2rem;
-        }
-
-        /* Role selector improved */
-        .section-label {
+        .showcase-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 6px 14px;
+            border-radius: 100px;
+            font-size: 0.75rem;
             font-weight: 600;
-            font-size: 0.85rem;
+            color: var(--accent);
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            color: #1f3b4c;
+            margin-bottom: 1.5rem;
+        }
+
+        .showcase-content h2 {
+            font-size: 2.6rem;
+            font-weight: 700;
+            line-height: 1.2;
+            letter-spacing: -1px;
             margin-bottom: 1rem;
+        }
+
+        .showcase-content p {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+            line-height: 1.6;
+            max-width: 420px;
+        }
+
+        /* Left Side: Form Input Ecosystem */
+        .form-pane {
+            padding: 4.5rem 4rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .form-header {
+            margin-bottom: 2.5rem;
+        }
+
+        .form-header h3 {
+            font-size: 1.85rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-header p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* Custom Segmented Control Router for Roles */
+        .segmented-control {
+            display: flex;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+            padding: 6px;
+            border-radius: 16px;
+            margin-bottom: 2.2rem;
+            position: relative;
+        }
+
+        .segmented-control .role-label {
+            flex: 1;
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            padding: 12px 0;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: color 0.3s ease;
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
         }
 
-        .section-label i {
-            color: #2c7da0;
-            font-size: 1rem;
-        }
-
-        .role-selector {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1.8rem;
-            flex-wrap: wrap;
-        }
-        
-        .role-option {
-            flex: 1;
-            cursor: pointer;
-        }
-        
-        .role-option input {
+        .segmented-control input[type="radio"] {
             display: none;
         }
-        
-        .role-card {
-            background: #ffffff;
-            border: 1.5px solid #e2edf2;
-            border-radius: 24px;
-            padding: 1rem 0.5rem;
-            text-align: center;
-            transition: all 0.2s ease;
-            cursor: pointer;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
-        }
-        
-        .role-option input:checked + .role-card {
-            border-color: #1f6e8c;
-            background: linear-gradient(145deg, #F6FBFE, #EFF7FC);
-            box-shadow: 0 8px 18px rgba(31, 110, 140, 0.12);
-            transform: scale(1.01);
-        }
-        
-        .role-card:hover {
-            border-color: #9cc9dc;
-            background: #fafeff;
-            transform: translateY(-2px);
-        }
-        
-        .role-icon {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-        }
-        
-        .role-title {
-            font-weight: 700;
-            font-size: 1rem;
-            color: #1f3b4c;
-        }
-        
-        .role-desc {
-            font-size: 0.7rem;
-            color: #5f7f8c;
-            margin-top: 4px;
+
+        /* Interactive highlighters dynamically shifted via JS classes */
+        .segmented-control input[type="radio"]:checked + .role-label {
+            color: #FFF;
         }
 
-        /* Form elements */
-        .form-group {
-            margin-bottom: 1.4rem;
+        .control-slider {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            bottom: 6px;
+            width: calc(33.333% - 8px);
+            background: linear-gradient(135deg, var(--primary) 0%, cubic-bezier(0.1, 0.9, 0.2, 1));
+            border-radius: 11px;
+            z-index: 1;
+            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), background 0.4s ease;
+            box-shadow: 0 4px 12px var(--primary-glow);
         }
 
-        .form-label {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-weight: 500;
-            font-size: 0.85rem;
-            color: #1e2f3a;
-            margin-bottom: 0.5rem;
+        /* Input Component Layout Architecture */
+        .input-group {
+            position: relative;
+            margin-bottom: 1.8rem;
         }
 
-        .form-label i {
-            color: #2c7da0;
-            width: 18px;
-            font-size: 0.9rem;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 0.9rem 1rem;
-            background: #f9fcfd;
-            border: 1.5px solid #e1eef3;
-            border-radius: 20px;
-            font-size: 0.95rem;
-            font-family: 'Inter', sans-serif;
-            transition: all 0.2s;
-            color: #0a2a38;
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: #2c7da0;
-            background: white;
-            box-shadow: 0 0 0 4px rgba(44, 125, 160, 0.1);
-        }
-
-        .password-wrapper {
+        .input-field-wrapper {
             position: relative;
             display: flex;
             align-items: center;
         }
 
-        .password-wrapper .form-control {
-            padding-right: 3rem;
+        .input-icon {
+            position: absolute;
+            left: 16px;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            pointer-events: none;
+            transition: color 0.3s;
         }
 
-        .password-toggle {
+        .form-input {
+            width: 100%;
+            padding: 16px 16px 16px 48px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            color: #FFF;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .form-input::placeholder {
+            color: rgba(255, 255, 255, 0.25);
+        }
+
+        /* Structural focus behaviors */
+        .form-input:focus {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px var(--primary-glow);
+        }
+
+        .form-input:focus ~ .input-icon {
+            color: var(--primary);
+        }
+
+        .password-toggle-btn {
             position: absolute;
-            right: 1rem;
+            right: 16px;
             background: none;
             border: none;
+            color: var(--text-muted);
             cursor: pointer;
-            color: #7f9aa8;
-            font-size: 1.1rem;
-            transition: color 0.2s;
-            padding: 0;
+            font-size: 1.05rem;
+            padding: 4px;
         }
 
-        .password-toggle:hover {
-            color: #1f6e8c;
-        }
-
-        /* Alert styles modern */
-        .alert {
-            padding: 0.9rem 1rem;
-            border-radius: 28px;
-            margin-bottom: 1.5rem;
+        /* Interactive Feedback Panels */
+        .alert-panel {
+            padding: 14px 18px;
+            border-radius: 14px;
+            margin-bottom: 1.8rem;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 12px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            animation: slideIn 0.3s ease-out;
+            font-size: 0.88rem;
+            line-height: 1.4;
+            animation: paneEntrance 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
         }
 
-        .alert-danger {
-            background: #ffe9e9;
-            border-left: 5px solid #e03a3a;
-            color: #b91c1c;
+        .alert-error {
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: #FCA5A5;
         }
 
         .alert-success {
-            background: #e6f9ef;
-            border-left: 5px solid #2b9348;
-            color: #166534;
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: #A7F3D0;
         }
 
-        .alert-info {
-            background: #dbeafe;
-            border-left: 5px solid #2563eb;
-            color: #2563eb;
+        @keyframes paneEntrance {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        .alert-icon {
-            font-size: 1.2rem;
+        /* Action Handlers */
+        .action-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            font-size: 0.88rem;
         }
 
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            color: var(--text-muted);
         }
 
-        /* Button modern */
-        .btn-primary {
+        .remember-me input {
+            accent-color: var(--primary);
+        }
+
+        .forgot-pass-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: opacity 0.2s;
+        }
+
+        .forgot-pass-link:hover {
+            opacity: 0.85;
+        }
+
+        .submit-trigger {
             width: 100%;
-            background: linear-gradient(105deg, #1f6e8c 0%, #0e4b64 100%);
+            padding: 16px;
+            background: linear-gradient(135deg, var(--primary) 0%, #3B82F6 100%);
             border: none;
-            padding: 0.9rem;
-            border-radius: 40px;
-            font-weight: 700;
+            border-radius: 14px;
+            color: #FFF;
             font-size: 1rem;
-            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 8px 24px var(--primary-glow);
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            margin-top: 0.5rem;
-            box-shadow: 0 8px 18px rgba(15, 70, 90, 0.2);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .btn-primary:hover {
-            background: linear-gradient(105deg, #2585a8 0%, #136481 100%);
+        .submit-trigger:hover {
             transform: translateY(-2px);
-            box-shadow: 0 14px 26px rgba(15, 70, 90, 0.25);
+            box-shadow: 0 12px 28px rgba(99, 102, 241, 0.3);
+            filter: brightness(1.05);
         }
 
-        .btn-primary:disabled {
-            opacity: 0.7;
+        .submit-trigger:disabled {
+            opacity: 0.6;
             cursor: not-allowed;
-            transform: none;
+            transform: none !important;
         }
 
-        .footer-links {
+        .pane-footer {
+            margin-top: 2.5rem;
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .pane-footer a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            margin-left: 4px;
+        }
+
+        /* Collapsible Utilities Tray */
+        .utilities-tray {
+            margin-top: 2rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .utilities-tray summary {
+            padding: 14px 18px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            user-select: none;
+        }
+
+        .utilities-tray summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .utilities-tray summary::after {
+            content: '\f107';
+            font-family: 'Font Awesome 5 Free';
+            font-weight: 900;
+            transition: transform 0.3s;
+        }
+
+        .utilities-tray[open] summary::after {
+            transform: rotate(180deg);
+        }
+
+        .tray-content {
+            padding: 0 18px 16px;
+            font-size: 0.8rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .demo-credential-row {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-top: 1.8rem;
-            font-size: 0.85rem;
+            padding: 8px 0;
+            color: var(--text-muted);
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.04);
         }
 
-        .footer-links a {
-            text-decoration: none;
-            color: #2c7da0;
-            font-weight: 500;
-            transition: color 0.2s;
+        .demo-credential-row:last-child {
+            border-bottom: none;
         }
 
-        .footer-links a:hover {
-            color: #154e63;
-            text-decoration: underline;
-        }
-
-        .login-tips {
-            background: #f4fafd;
-            border-radius: 24px;
-            margin-top: 1.8rem;
-            padding: 0.8rem 1rem;
-            border: 1px solid #cbe5ed;
-            transition: all 0.2s;
-        }
-        
-        .login-tips summary {
+        .demo-label {
             font-weight: 600;
-            font-size: 0.8rem;
-            color: #2c7da0;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .login-tips summary:hover {
-            color: #1f6e8c;
-        }
-        
-        .login-tips p {
-            margin: 0.5rem 0 0 0;
-            font-size: 0.75rem;
-            color: #4f7e8c;
-        }
-        
-        .demo-badge {
-            background: white;
-            border-radius: 40px;
-            padding: 4px 10px;
-            display: inline-block;
-            margin-top: 8px;
-            margin-right: 8px;
-            font-size: 0.7rem;
-            border: 1px solid #cce3ea;
-            color: #1f5e7a;
+            color: #FFF;
         }
 
-        @media (max-width: 550px) {
-            .form-wrapper {
-                padding: 1.5rem;
+        /* Responsive Breakpoint Adaptations */
+        @media (max-width: 992px) {
+            .gateway-wrapper {
+                grid-template-columns: 1fr;
+                max-width: 580px;
             }
-            .role-selector {
-                gap: 0.6rem;
+            .showcase-pane {
+                display: none;
             }
-            .role-card {
-                padding: 0.7rem 0.2rem;
+            .form-pane {
+                padding: 3.5rem 2.5rem;
             }
-            .role-icon {
-                font-size: 1.6rem;
+        }
+
+        @media (max-width: 480px) {
+            .form-pane {
+                padding: 2.5rem 1.5rem;
             }
-            .role-title {
-                font-size: 0.85rem;
-            }
-            .brand-header h1 {
-                font-size: 1.5rem;
+            .segmented-control .role-label {
+                font-size: 0.8rem;
+                padding: 10px 0;
             }
         }
     </style>
 </head>
 <body>
-    <div class="login-container">
-        <div class="brand-header">
-            <div class="brand-icon">
-                <i class="fas fa-hospital-user"></i>
-            </div>
-            <h1>MediFlow HMS</h1>
-            <p>Secure access to your medical dashboard</p>
-        </div>
+
+    <div class="ambient-glow-1" id="ambient1"></div>
+    <div class="ambient-glow-2"></div>
+
+    <div class="gateway-wrapper">
         
-        <div class="form-wrapper">
+        <div class="form-pane">
+            <div class="form-header">
+                <h3>Account Gateway</h3>
+                <p>Welcome back, please log into your terminal environment.</p>
+            </div>
+
             <?php if ($error): ?>
-                <div class="alert alert-danger">
-                    <span class="alert-icon"><i class="fas fa-exclamation-triangle"></i></span>
+                <div class="alert-panel alert-error">
+                    <i class="fas fa-circle-exclamation" style="margin-top: 2px;"></i>
                     <span><?php echo htmlspecialchars($error); ?></span>
                 </div>
             <?php endif; ?>
             
             <?php if ($success): ?>
-                <div class="alert alert-success">
-                    <span class="alert-icon"><i class="fas fa-check-circle"></i></span>
+                <div class="alert-panel alert-success">
+                    <i class="fas fa-circle-check" style="margin-top: 2px;"></i>
                     <span><?php echo htmlspecialchars($success); ?></span>
                 </div>
             <?php endif; ?>
-            
+
             <form method="POST" action="" id="loginForm">
-                <!-- Role Selection -->
-                <div class="section-label">
-                    <i class="fas fa-user-tag"></i> <span>I am a</span>
-                </div>
-                <div class="role-selector">
-                    <label class="role-option">
-                        <input type="radio" name="role" value="patient" <?php echo ($selectedRole == 'patient' || $selectedRole == '') ? 'checked' : ''; ?> required>
-                        <div class="role-card">
-                            <div class="role-icon"><i class="fas fa-user-injured"></i></div>
-                            <div class="role-title">Patient</div>
-                            <div class="role-desc">Appointments & records</div>
-                        </div>
-                    </label>
-                    
-                    <label class="role-option">
-                        <input type="radio" name="role" value="doctor" <?php echo $selectedRole == 'doctor' ? 'checked' : ''; ?>>
-                        <div class="role-card">
-                            <div class="role-icon"><i class="fas fa-user-md"></i></div>
-                            <div class="role-title">Doctor</div>
-                            <div class="role-desc">Patient care & schedule</div>
-                        </div>
-                    </label>
-                    
-                    <label class="role-option">
-                        <input type="radio" name="role" value="admin" <?php echo $selectedRole == 'admin' ? 'checked' : ''; ?>>
-                        <div class="role-card">
-                            <div class="role-icon"><i class="fas fa-shield-alt"></i></div>
-                            <div class="role-title">Admin</div>
-                            <div class="role-desc">System & analytics</div>
-                        </div>
-                    </label>
-                </div>
                 
-                <div class="form-group">
-                    <label class="form-label">
-                        <i class="fas fa-envelope"></i>
-                        <span>Username or Email</span>
+                <div class="segmented-control">
+                    <div class="control-slider" id="roleSlider"></div>
+                    
+                    <input type="radio" name="role" id="role-patient" value="patient" <?php echo ($selectedRole == 'patient') ? 'checked' : ''; ?> required>
+                    <label class="role-label" for="role-patient" onclick="updateInterfaceTheme('patient', 0)">
+                        <i class="fas fa-user-injured"></i> Patient
                     </label>
-                    <input type="text" name="username" class="form-control" placeholder="Enter your username or email" required autofocus value="<?php echo isset($_POST['username']) ? htmlspecialchars($_POST['username']) : ''; ?>">
+
+                    <input type="radio" name="role" id="role-doctor" value="doctor" <?php echo ($selectedRole == 'doctor') ? 'checked' : ''; ?>>
+                    <label class="role-label" for="role-doctor" onclick="updateInterfaceTheme('doctor', 1)">
+                        <i class="fas fa-user-md"></i> Doctor
+                    </label>
+
+                    <input type="radio" name="role" id="role-admin" value="admin" <?php echo ($selectedRole == 'admin') ? 'checked' : ''; ?>>
+                    <label class="role-label" for="role-admin" onclick="updateInterfaceTheme('admin', 2)">
+                        <i class="fas fa-user-gear"></i> Admin
+                    </label>
                 </div>
-                
-                <div class="form-group">
-                    <label class="form-label">
-                        <i class="fas fa-lock"></i>
-                        <span>Password</span>
-                    </label>
-                    <div class="password-wrapper">
-                        <input type="password" name="password" id="password" class="form-control" placeholder="Enter your password" required>
-                        <button type="button" class="password-toggle" onclick="togglePassword()">
-                            <i class="far fa-eye"></i>
+
+                <div class="input-group">
+                    <div class="input-field-wrapper">
+                        <input type="text" name="username" class="form-input" id="usernameField" placeholder="Username or email identity" required autofocus value="<?php echo isset($_POST['username']) ? htmlspecialchars($_POST['username']) : ''; ?>">
+                        <i class="fas fa-fingerprint input-icon"></i>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <div class="input-field-wrapper">
+                        <input type="password" name="password" id="passwordField" class="form-input" placeholder="Security key parameter" required>
+                        <i class="fas fa-shield-halved input-icon"></i>
+                        <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility()">
+                            <i class="far fa-eye" id="passwordToggleIcon"></i>
                         </button>
                     </div>
                 </div>
-                
-                <button type="submit" class="btn-primary" id="submitBtn">
-                    <i class="fas fa-arrow-right-to-bracket"></i> Sign In
+
+                <div class="action-container">
+                    <label class="remember-me">
+                        <input type="checkbox" name="remember"> Keep me authenticated
+                    </label>
+                    <a href="forgot_password.php" class="forgot-pass-link">Forgot credentials?</a>
+                </div>
+
+                <button type="submit" class="submit-trigger" id="submitBtn">
+                    <span>Initialize Session</span> <i class="fas fa-arrow-right-long"></i>
                 </button>
             </form>
-            
-            <div class="footer-links">
-                <a href="register.php"><i class="fas fa-user-plus"></i> Create account</a>
-                <a href="forgot_password.php"><i class="fas fa-question-circle"></i> Forgot password?</a>
+
+            <div class="pane-footer">
+                Don't possess a terminal account?<a href="register.php">Create Profile</a>
             </div>
-            
-            <details class="login-tips">
-                <summary><i class="fas fa-flask"></i> Demo Credentials (Development Only)</summary>
-                <p><strong>Admin:</strong> admin / password</p>
-                <p><strong>Doctor:</strong> KB / Kbndlovu1234@</p>                            
-                <p><strong>Patient:</strong> john_doe / password</p>
-                <div class="demo-badge"><i class="fas fa-info-circle"></i> Select matching role first</div>
-            </details>
+
+         <details class="utilities-tray">
+    <summary>System Diagnostics & Mock Profiles</summary>
+    <div class="tray-content">
+        <div class="demo-credential-row">
+            <span>👤 Patient Portal:</span>
+            <span class="demo-label">emma.thompson / password</span>
+        </div>
+        <div class="demo-credential-row">
+            <span>👩‍⚕️ Doctor Portal:</span>
+            <span class="demo-label">dr.patel / password</span>
+        </div>
+        <div class="demo-credential-row">
+            <span>🔐 Admin Portal:</span>
+            <span class="demo-label">superadmin / password</span>
+        </div>
+        <div class="demo-credential-row" style="margin-top: 8px; color: rgba(255,255,255,0.3); font-size: 0.7rem;">
+            <span>📋 All passwords are: <strong style="color:var(--primary)">password</strong></span>
         </div>
     </div>
-    
-    <script>
-        // Role-based placeholder text for username field
-        document.querySelectorAll('input[name="role"]').forEach(radio => {
-            radio.addEventListener('change', function() {
-                const usernameInput = document.querySelector('input[name="username"]');
-                const role = this.value;
-                
-                const placeholders = {
-                    'patient': 'Enter your username or email (e.g., john_doe)',
-                    'doctor': 'Enter your username or email (e.g., KB or dr.smith)',
-                    'admin': 'Enter your username or email (e.g., admin)'
-                };
-                
-                usernameInput.placeholder = placeholders[role] || 'Enter your username or email';
-                usernameInput.focus();
-            });
-        });
+</details>
+        </div>
 
-        // Add loading state on form submit
-        const loginForm = document.getElementById('loginForm');
-        if (loginForm) {
-            loginForm.addEventListener('submit', function(e) {
-                const submitBtn = this.querySelector('button[type="submit"]');
-                const originalHtml = submitBtn.innerHTML;
-                
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Logging in...';
-                submitBtn.disabled = true;
-                
-                // Re-enable button if form submission fails (optional)
-                setTimeout(() => {
-                    if (submitBtn.disabled) {
-                        submitBtn.disabled = false;
-                        submitBtn.innerHTML = originalHtml;
-                    }
-                }, 10000);
-            });
+        <div class="showcase-pane">
+            <div class="brand-identity">
+                <div class="brand-icon" id="interactiveLogo">
+                    <i class="fas fa-heart-pulse"></i>
+                </div>
+                <div class="brand-name">Hospital System</div>
+            </div>
+
+            <div class="showcase-content">
+                <div class="showcase-tag" id="dynamicTag"><i class="fas fa-sparkles"></i> Core Portal</div>
+                <h2 id="dynamicTitle">Unified Medical Infrastructure</h2>
+                <p id="dynamicDesc">Access clinical systems, schedule operations, and process client telemetry with military-grade systemic isolation.</p>
+            </div>
+
+            <div class="pane-footer" style="text-align: left; margin-top: 0; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 1.5rem;">
+                <span style="font-size: 0.78rem; opacity: 0.6;">Systemic Integrity Verified &bull; TLS 1.3 Encryption Active</span>
+            </div>
+        </div>
+
+    </div>
+
+  <script>
+    // System Config Maps for Role Themes
+    const themeConfigMatrix = {
+        'patient': {
+            primary: '#6366F1',
+            primaryGlow: 'rgba(99, 102, 241, 0.15)',
+            accent: '#10B981',
+            placeholder: 'Enter your medical identity (e.g., emma.thompson)',
+            tag: '<i class="fas fa-shield-heart"></i> Patient Link',
+            title: 'Empowering Patient Digital Care',
+            desc: 'Review medical records, track outpatient workflows, and configure clinical visit timelines intuitively.'
+        },
+        'doctor': {
+            primary: '#0ea5e9',
+            primaryGlow: 'rgba(14, 165, 233, 0.15)',
+            accent: '#38bdf8',
+            placeholder: 'Enter practitioner identifier (e.g., dr.patel)',
+            tag: '<i class="fas fa-stethoscope"></i> Practitioner Node',
+            title: 'Clinical Telemetry Terminal',
+            desc: 'Review analytical reports, authorize patient transfers, and execute updates to pharmaceutical regimes.'
+        },
+        'admin': {
+            primary: '#ec4899',
+            primaryGlow: 'rgba(236, 72, 153, 0.15)',
+            accent: '#f43f5e',
+            placeholder: 'Enter system master username (e.g., superadmin)',
+            tag: '<i class="fas fa-terminal"></i> Core Kernel Security',
+            title: 'System Management Hub',
+            desc: 'Audit transaction frameworks, isolate platform nodes, and configure infrastructure permissions globally.'
         }
+    };
 
-        // Password visibility toggle function
-        function togglePassword() {
-            const passwordInput = document.getElementById('password');
-            const toggleBtn = document.querySelector('.password-toggle i');
-            
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                toggleBtn.classList.remove('fa-eye');
-                toggleBtn.classList.add('fa-eye-slash');
-            } else {
-                passwordInput.type = 'password';
-                toggleBtn.classList.remove('fa-eye-slash');
-                toggleBtn.classList.add('fa-eye');
-            }
+    // UI Theme Mutation State Engine
+    function updateInterfaceTheme(roleKey, slideIndex) {
+        const root = document.documentElement;
+        const config = themeConfigMatrix[roleKey];
+        
+        // Re-render Dynamic Element Variables
+        root.style.setProperty('--primary', config.primary);
+        root.style.setProperty('--primary-glow', config.primaryGlow);
+        root.style.setProperty('--accent', config.accent);
+        
+        // Animate Segmented Control Sliders
+        const slider = document.getElementById('roleSlider');
+        if (slider) {
+            slider.style.transform = `translateX(${slideIndex * 100}%)`;
         }
         
-        // Double-click on logo to auto-fill demo credentials (helpful for testing)
-        const logoIcon = document.querySelector('.brand-icon');
-        if (logoIcon) {
-            logoIcon.addEventListener('dblclick', function() {
-                const selectedRole = document.querySelector('input[name="role"]:checked').value;
-                const usernameInput = document.querySelector('input[name="username"]');
-                const passwordInput = document.querySelector('input[name="password"]');
-                
-                const demos = {
-                    'admin': { username: 'admin', password: 'password' },
-                    'doctor': { username: 'KB', password: 'Kbndlovu1234@' },
-                    'patient': { username: 'john_doe', password: 'password' }
-                };
-                
-                if (demos[selectedRole]) {
-                    usernameInput.value = demos[selectedRole].username;
-                    passwordInput.value = demos[selectedRole].password;
-                    
-                    // Show temporary success message
-                    const alertDiv = document.createElement('div');
-                    alertDiv.className = 'alert alert-info';
-                    alertDiv.innerHTML = '<span class="alert-icon"><i class="fas fa-key"></i></span><span>Demo credentials filled for ' + selectedRole + '!</span>';
-                    const formWrapper = document.querySelector('.form-wrapper');
-                    formWrapper.insertBefore(alertDiv, formWrapper.firstChild);
-                    
-                    setTimeout(() => alertDiv.remove(), 3000);
-                }
-            });
+        // Mutate Input Layout Placeholders Dynamically
+        const usernameField = document.getElementById('usernameField');
+        if (usernameField) {
+            usernameField.placeholder = config.placeholder;
         }
-    </script>
+        
+        // Execute Smooth Morphing Text Micro-animations on Showcase Pane
+        const tag = document.getElementById('dynamicTag');
+        const title = document.getElementById('dynamicTitle');
+        const desc = document.getElementById('dynamicDesc');
+
+        if (tag && title && desc) {
+            [tag, title, desc].forEach(el => el.style.opacity = '0');
+            
+            setTimeout(() => {
+                tag.innerHTML = config.tag;
+                title.innerText = config.title;
+                desc.innerText = config.desc;
+                [tag, title, desc].forEach(el => el.style.opacity = '1');
+            }, 200);
+        }
+    }
+
+    // Mask/Unmask Password Elements
+    function togglePasswordVisibility() {
+        const field = document.getElementById('passwordField');
+        const icon = document.getElementById('passwordToggleIcon');
+        
+        if (field && icon) {
+            if (field.type === 'password') {
+                field.type = 'text';
+                icon.className = 'far fa-eye-slash';
+            } else {
+                field.type = 'password';
+                icon.className = 'far fa-eye';
+            }
+        }
+    }
+
+    // Form Submit Indicator Micro-interaction
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        loginForm.addEventListener('submit', function() {
+            const btn = document.getElementById('submitBtn');
+            if (btn) {
+                btn.innerHTML = '<i class="fas fa-spinner-third fa-spin"></i> Establishing Link...';
+                btn.disabled = true;
+            }
+        });
+    }
+
+    // Developer Mode Shortcut Matrix: Double Click Logo to Auto-Fill 
+    const interactiveLogo = document.getElementById('interactiveLogo');
+    if (interactiveLogo) {
+        interactiveLogo.addEventListener('dblclick', function() {
+            const activeRoleRadio = document.querySelector('input[name="role"]:checked');
+            if (!activeRoleRadio) return;
+            
+            const activeRole = activeRoleRadio.value;
+            const usernameInput = document.getElementById('usernameField');
+            const passwordInput = document.getElementById('passwordField');
+            
+            // Updated datasets with new users
+            const datasets = {
+                'admin': { u: 'superadmin', p: 'SecurePass123!' },
+                'doctor': { u: 'dr.patel', p: 'SecurePass123!' },
+                'patient': { u: 'emma.thompson', p: 'SecurePass123!' }
+            };
+            
+            if (datasets[activeRole] && usernameInput && passwordInput) {
+                usernameInput.value = datasets[activeRole].u;
+                passwordInput.value = datasets[activeRole].p;
+                
+                // Optional: Add a small visual feedback
+                const originalBg = usernameInput.style.backgroundColor;
+                usernameInput.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+                passwordInput.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+                setTimeout(() => {
+                    usernameInput.style.backgroundColor = originalBg;
+                    passwordInput.style.backgroundColor = originalBg;
+                }, 500);
+            }
+        });
+    }
+
+    // Initialize Default Visual Configuration on Page Mount
+    window.addEventListener('DOMContentLoaded', () => {
+        const preSelected = document.querySelector('input[name="role"]:checked');
+        if (preSelected) {
+            const realIdx = preSelected.value === 'patient' ? 0 : preSelected.value === 'doctor' ? 1 : 2;
+            updateInterfaceTheme(preSelected.value, realIdx);
+        }
+    });
+</script>
 </body>
 </html>
+
+```
